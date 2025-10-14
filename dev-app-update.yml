@@ -1,3 +1,3 @@
 provider: generic
 url: https://example.com/auto-updates
-updaterCacheDirName: task-pipeline-updater
+updaterCacheDirName: task-pipeline-react-updater
