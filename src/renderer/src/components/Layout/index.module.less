@@ -1,0 +1,36 @@
+@font-size: 14px;
+
+.Layout {
+    display: flex;
+    height: 100vh;
+    overflow-y: hidden;
+
+    .menu,
+    .content {
+        height: 100%;
+    }
+
+    .menu {
+        display: flex;
+        flex-direction: row;
+        align-items: start;
+
+        :global(.ant-menu-root) {
+            height: 100%;
+        }
+    }
+
+    .menuItem {
+        font-size: @font-size;
+
+        :global(.anticon) {
+            font-size: @font-size !important;
+        }
+    }
+
+    .content {
+        min-width: 740px;
+        flex-grow: 1;
+    }
+
+}

@@ -1,8 +1,10 @@
-import Test from './components/Test.tsx';
+import { router, RouterProvider } from '@renderer/route/index'
 export default (): React.JSX.Element => {
     const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
 
-    return <>
-        <Test></Test>
-    </>
+    return (
+        <>
+            <RouterProvider router={router}></RouterProvider>
+        </>
+    )
 }
