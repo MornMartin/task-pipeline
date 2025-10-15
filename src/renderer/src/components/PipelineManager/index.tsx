@@ -5,7 +5,7 @@ interface IProps { }
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
     return <>
-        <div className={style.TaskManager}>TaskManager</div>
+        <div className={style.PipelineManager}>PipelineManager</div>
     </>
 }
 
