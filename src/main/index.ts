@@ -2,6 +2,9 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import Storage from './Storage'
+
+const db = new Storage(app.getPath('userData'));
 
 function createWindow(): void {
     // Create the browser window.
@@ -52,6 +55,13 @@ app.whenReady().then(() => {
     // IPC test
     ipcMain.on('ping', () => console.log('pong'))
 
+
+    ipcMain.handle('CALL_STORAGE', (event, apiName, ...arg) => {
+        const caller = db[apiName];
+        if (!caller) throw Error(`The Api ${apiName} is not existed.`);
+        return caller.apply(db, arg);
+    })
+
     createWindow()
 
     app.on('activate', function () {
@@ -67,6 +77,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit()
+        db.close()
     }
 })
 

@@ -1,7 +1,7 @@
 import { useLoaderData, useNavigate } from 'react-router';
 import style from './index.module.less'
 import { useRef, useState } from 'react'
-import { Form, Input, Button, FormInstance } from 'antd';
+import { Form, Input, Button, FormInstance, message } from 'antd';
 import { generateDescriptionValidator, generateNameValidator, generateRequireValidator } from '@renderer/utils/validators';
 import { formItemLayout } from '@renderer/utils/settings';
 import { createPipeline } from '@renderer/api';
@@ -23,11 +23,13 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
             if (!form.current) throw Error('初始化表单失败');
             await form.current.validateFields();
             const params = form.current.getFieldsValue();
-            const { id } = await createPipeline(params);
+            const id = await createPipeline(params);
             setIsLoading(false);
             navigate(`/pipelineDesigner/${id}`);
-        } catch (err) {
+        } catch (err: any) {
             setIsLoading(false);
+            // message.error(`${err?.message ?? err}`);
+            console.error(err);
         }
     }
     return <>
