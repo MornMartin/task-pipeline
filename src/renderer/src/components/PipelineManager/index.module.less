@@ -1,1 +1,21 @@
-.PipelineManager {}
+@operationBar-height: 28px;
+@gap: 16px;
+
+.PipelineManager {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    --gap: @gap;
+}
+
+.operationBar {
+    display: flex;
+    padding: @gap;
+    justify-content: space-between;
+}
+
+.table {
+    padding: 0 @gap @gap;
+    height: calc(100% - @gap * 4 - @operationBar-height);
+
+}

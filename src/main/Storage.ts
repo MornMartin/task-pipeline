@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 /**
  * 表字段数据类型
  */
-export type TTableFieldDataType = 'INTEGER' | 'FLOAT' | 'TEXT' | 'TIMESTAMP' | 'BOOLEAN' | 'VARCHAR(256)' | 'VARCHAR(1024)';
+export type TTableFieldDataType = 'INTEGER' | 'FLOAT' | 'TEXT' | 'TIMESTAMP' | 'BOOLEAN' | 'VARCHAR(256)' | 'VARCHAR(1024)' | 'VARCHAR(2048)';
 
 /**
  * 表字段约束
@@ -56,7 +56,7 @@ const createPipelineTableFields = (): Record<string, ITableField> => {
     return {
         ...createTableBaseFields(),
         descriptions: {
-            dataType: 'VARCHAR(1024)',
+            dataType: 'VARCHAR(2048)',
         },
         nodes: {
             dataType: 'TEXT',
@@ -76,6 +76,10 @@ const createPipelineTableFields = (): Record<string, ITableField> => {
 const createJobTableFields = (): Record<string, ITableField> => {
     return {
         ...createTableBaseFields(),
+        pipeline_id: {
+            dataType: 'INTEGER',
+            constraints: 'NOT NULL',
+        },
         status: {
             dataType: 'VARCHAR(256)',
         },
@@ -87,32 +91,56 @@ const createJobTableFields = (): Record<string, ITableField> => {
         },
     }
 }
+
+const createLogTableFields = (): Record<string, ITableField> => {
+    return {
+        id: {
+            dataType: 'INTEGER',
+            constraints: 'PRIMARY KEY',
+            default: 'AUTOINCREMENT',
+        },
+        action: {
+            dataType: 'VARCHAR(256)',
+            constraints: 'UNIQUE',
+        },
+        details: {
+            dataType: 'VARCHAR(2048)',
+        },
+        created_at: {
+            dataType: 'TIMESTAMP',
+            constraints: 'DEFAULT',
+            default: 'CURRENT_TIMESTAMP',
+        },
+    }
+}
+
 /**
  * 生成建表字段语句
  * @param fields 
  * @returns 
  */
-const createTableFieldStatement = (fields: Record<string, ITableField> = {}): string => {
+const createTableFieldStatement = (fields: Record<string, ITableField> = {}, extra: string = ''): string => {
     return Object.keys(fields).map(key => {
         const config = fields[key] as ITableField || {};
         return `\t${key} ${config.dataType ?? ''} ${config.constraints ?? ''} ${config.default ?? ''}`
-    }).join(',\n');
+    }).join(',\n').concat(extra);
 }
 
 export default class Storage {
     private db: Database;
     constructor(path: string, dbname: string = 'Storage.db') {
         this.db = new Database(`${path}/${dbname}`, { verbose: console.log });
-        this.createTable('JOBS', createJobTableFields());// 创建任务表
+        this.createTable('LOGS', createLogTableFields());// 创建日志表
         this.createTable('PIPELINES', createPipelineTableFields());// 创建流水线表
+        this.createTable('JOBS', createJobTableFields(), ',\n\tFOREIGN KEY (pipeline_id) REFERENCES PIPELINES(id)');// 创建任务表
     }
     /**
      * 建表
      * @param tableName 表名称
      * @param fields 表字段
      */
-    private createTable(tableName: string, fields: Record<string, ITableField>) {
-        this.db.exec(`CREATE TABLE IF NOT EXISTS ${tableName} (\n${createTableFieldStatement(fields)}\n);`)
+    private createTable(tableName: string, fields: Record<string, ITableField>, extra: string = '') {
+        this.db.exec(`CREATE TABLE IF NOT EXISTS ${tableName} (\n${createTableFieldStatement(fields, extra)}\n);`);
     }
     /**
      * 创建流水线
@@ -133,11 +161,15 @@ export default class Storage {
      * @param id 
      * @returns 
      */
-    public deletePipeline(id: string) {
+    public deletePipeline(id: string[]) {
         try {
-            const { changes } = this.db.prepare('DELETE FROM PIPELINES WHERE id = @id').run({ id });
+            const ids = Array.isArray(id) ? id : [id];
+            const { changes } = this.db.prepare(`DELETE FROM PIPELINES WHERE id IN (${ids.map(i => '?').join(', ')})`).run(...ids);
             if (!changes) {
-                throw Error(`Pipeline ${id} is not existed.`)
+                return Promise.reject(`Pipeline ${id} is not existed.`)
+            }
+            if (changes && changes < ids.length) {
+                return Promise.reject(`Pipeline partially deleted successfully.`)
             }
             return Promise.resolve('ok!');
         } catch (err) {
@@ -153,7 +185,7 @@ export default class Storage {
         try {
             const res = this.db.prepare('SELECT * FROM PIPELINES WHERE id = @id').get({ id });
             if (!res) {
-                throw Error(`Pipeline ${id} is not existed.`)
+                return Promise.reject(`Pipeline ${id} is not existed.`)
             }
             return Promise.resolve(res);
         } catch (err) {
@@ -169,7 +201,7 @@ export default class Storage {
         try {
             const { name = '', pageSize = 10, pageIndex = 0 } = query || {};
             const { total } = this.db.prepare('SELECT COUNT(*) as total FROM PIPELINES WHERE name LIKE @name').get({ name: `%${name}%` });
-            const toQuery = this.db.prepare('SELECT * FROM PIPELINES WHERE name LIKE @name ORDER BY name LIMIT @limit OFFSET @offset');
+            const toQuery = this.db.prepare('SELECT * FROM PIPELINES WHERE name LIKE @name ORDER BY created_at DESC LIMIT @limit OFFSET @offset');
             const data = Array.from(toQuery.iterate({ name: `%${name}%`, limit: pageSize, offset: pageIndex * pageSize }));
             return Promise.resolve({ total, pageSize, pageIndex, data });
         } catch (err) {
@@ -187,7 +219,7 @@ export default class Storage {
             const { nodes = '', lines = '', variables = '' } = params || {};
             const { changes } = this.db.prepare('UPDATE PIPELINES SET nodes = @nodes, lines = @lines, variables = @variables WHERE id = @id').run({ id, nodes, lines, variables });
             if (!changes) {
-                throw Error(`Pipeline ${id} is not existed.`)
+                return Promise.reject(`Pipeline ${id} is not existed.`)
             }
             return Promise.resolve('ok!');
         } catch (err) {
@@ -205,7 +237,7 @@ export default class Storage {
             const { name = '', descriptions = '' } = params || {}
             const { changes } = this.db.prepare('UPDATE PIPELINES SET name = @name, descriptions = @descriptions WHERE id = @id').run({ id, name, descriptions });
             if (!changes) {
-                throw Error(`Pipeline ${id} is not existed.`)
+                return Promise.reject(`Pipeline ${id} is not existed.`)
             }
             return Promise.resolve('ok!');
         } catch (err) {

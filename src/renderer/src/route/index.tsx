@@ -24,7 +24,6 @@ const routes: (RouteObject & Record<string, any>)[] = [
                 path: ":id",
                 element: <PipelineCanvas></PipelineCanvas>,
                 loader: async ({ params }) => {
-                    console.log(params);
                     return params;
                 },
             },

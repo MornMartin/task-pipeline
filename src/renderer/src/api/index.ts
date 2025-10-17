@@ -22,8 +22,8 @@ export const createPipeline = (params: { name: string, descriptions?: string }) 
  * @param id 
  * @returns 
  */
-export const deletePipeline = (id: string) => {
-    return callStorage('deletePipeline', id);
+export const deletePipeline = (ids: (string | number)[]) => {
+    return callStorage('deletePipeline', ids);
 }
 
 /**
@@ -40,8 +40,8 @@ export const getPipeline = (id: string) => {
  * @param query 
  * @returns 
  */
-export const getPipelines = (query: { name?: string, pageSize: number, pageIndex: number }) => {
-    return callStorage('getPipelines', query);
+export const getPipelines = (name: string, pageSize: number, current: number) => {
+    return callStorage('getPipelines', { name, pageSize, pageIndex: current - 1 });
 }
 
 /**

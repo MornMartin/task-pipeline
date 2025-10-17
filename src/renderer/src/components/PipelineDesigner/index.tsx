@@ -1,20 +1,22 @@
-import { useLoaderData, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import style from './index.module.less'
 import { useRef, useState } from 'react'
-import { Form, Input, Button, FormInstance, message } from 'antd';
+import { Form, Input, Button, FormInstance } from 'antd';
 import { generateDescriptionValidator, generateNameValidator, generateRequireValidator } from '@renderer/utils/validators';
 import { formItemLayout } from '@renderer/utils/settings';
 import { createPipeline } from '@renderer/api';
+import { errorMsg } from '@renderer/utils/message';
 
 interface IFields {
     name: string;
-    description: string;
+    descriptions: string;
 }
 
 interface IProps { }
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
     const form = useRef<FormInstance>(null);
+    const [message, contextHolder] = errorMsg()
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const toCreatePipeline = async () => {
@@ -27,14 +29,15 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
             setIsLoading(false);
             navigate(`/pipelineDesigner/${id}`);
         } catch (err: any) {
+            const [verifyError] = err?.errorFields;
             setIsLoading(false);
-            // message.error(`${err?.message ?? err}`);
-            console.error(err);
+            verifyError ? '' : message(err?.message ?? err);
         }
     }
     return <>
         <div className={style.PipelineDesigner}>
             <div>
+                {contextHolder}
                 <Form {...formItemLayout} ref={form}>
                     <Form.Item<IFields>
                         label="名称"
@@ -46,10 +49,10 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                     </Form.Item>
                     <Form.Item<IFields>
                         label="描述"
-                        name="description"
+                        name="descriptions"
                         rules={[generateDescriptionValidator()]}
                     >
-                        <Input.TextArea maxLength={1024} style={{ resize: 'none' }} />
+                        <Input.TextArea maxLength={1024} style={{ resize: 'none', height: '160px' }} />
                     </Form.Item>
                     <Form.Item label={null}>
                         <Button type="primary" htmlType="button" loading={isLoading} onClick={toCreatePipeline}>创建</Button>
