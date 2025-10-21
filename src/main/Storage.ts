@@ -101,7 +101,6 @@ const createLogTableFields = (): Record<string, ITableField> => {
         },
         action: {
             dataType: 'VARCHAR(256)',
-            constraints: 'UNIQUE',
         },
         details: {
             dataType: 'VARCHAR(2048)',
@@ -143,6 +142,21 @@ export default class Storage {
         this.db.exec(`CREATE TABLE IF NOT EXISTS ${tableName} (\n${createTableFieldStatement(fields, extra)}\n);`);
     }
     /**
+     * 添加日志
+     * @param action 
+     * @param details 
+     * @returns 
+     */
+    public addLog(action = '', details?: string) {
+        try {
+            if (!action) throw Error('Action can not be null');
+            const { lastInsertRowid } = this.db.prepare('INSERT INTO LOGS (action, details) VALUES (@action, @details)').run({ action, details });
+            return Promise.resolve(lastInsertRowid);
+        } catch (err) {
+            return Promise.reject(err);
+        }
+    }
+    /**
      * 创建流水线
      * @param params 
      * @returns 
@@ -165,6 +179,7 @@ export default class Storage {
         try {
             const ids = Array.isArray(id) ? id : [id];
             const { changes } = this.db.prepare(`DELETE FROM PIPELINES WHERE id IN (${ids.map(i => '?').join(', ')})`).run(...ids);
+            this.addLog("DELETE_PIPELINES", ids.join(', '));
             if (!changes) {
                 return Promise.reject(`Pipeline ${id} is not existed.`)
             }
@@ -197,11 +212,14 @@ export default class Storage {
      * @param query 
      * @returns 
      */
-    public getPipelines(query: { name: string, pageSize: number, pageIndex: number }) {
+    public getPipelines(query: { name: string, pageSize: number, pageIndex: number, sorter: { sortField: string, sortOrder?: string } }) {
         try {
-            const { name = '', pageSize = 10, pageIndex = 0 } = query || {};
+            const { name = '', pageSize = 10, pageIndex = 0, sorter = {} } = query || {};
+            const { sortField, sortOrder } = sorter as { sortField?: string, sortOrder?: string };
+            const validSortField = ['created_at', 'updated_at'].includes(sortField as string) ? sortField : 'created_at';
+            const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
             const { total } = this.db.prepare('SELECT COUNT(*) as total FROM PIPELINES WHERE name LIKE @name').get({ name: `%${name}%` });
-            const toQuery = this.db.prepare('SELECT * FROM PIPELINES WHERE name LIKE @name ORDER BY created_at DESC LIMIT @limit OFFSET @offset');
+            const toQuery = this.db.prepare(`SELECT * FROM PIPELINES WHERE name LIKE @name ORDER BY ${validSortField} ${validSortOrder} LIMIT @limit OFFSET @offset`);
             const data = Array.from(toQuery.iterate({ name: `%${name}%`, limit: pageSize, offset: pageIndex * pageSize }));
             return Promise.resolve({ total, pageSize, pageIndex, data });
         } catch (err) {
@@ -217,10 +235,11 @@ export default class Storage {
     public updatePipelineCanvasInfo(id: string, params: { nodes: string, lines: string, variables: string }) {
         try {
             const { nodes = '', lines = '', variables = '' } = params || {};
-            const { changes } = this.db.prepare('UPDATE PIPELINES SET nodes = @nodes, lines = @lines, variables = @variables WHERE id = @id').run({ id, nodes, lines, variables });
+            const { changes } = this.db.prepare('UPDATE PIPELINES SET updated_at = CURRENT_TIMESTAMP, nodes = @nodes, lines = @lines, variables = @variables WHERE id = @id').run({ id, nodes, lines, variables });
             if (!changes) {
                 return Promise.reject(`Pipeline ${id} is not existed.`)
             }
+            this.addLog("UPDATE_PIPELINES_CANVAS", id);
             return Promise.resolve('ok!');
         } catch (err) {
             return Promise.reject(err);
@@ -235,10 +254,11 @@ export default class Storage {
     public updatePipelineBasicInfo(id: string, params: { name: string, descriptions: string }) {
         try {
             const { name = '', descriptions = '' } = params || {}
-            const { changes } = this.db.prepare('UPDATE PIPELINES SET name = @name, descriptions = @descriptions WHERE id = @id').run({ id, name, descriptions });
+            const { changes } = this.db.prepare('UPDATE PIPELINES SET updated_at = CURRENT_TIMESTAMP, name = @name, descriptions = @descriptions WHERE id = @id').run({ id, name, descriptions });
             if (!changes) {
                 return Promise.reject(`Pipeline ${id} is not existed.`)
             }
+            this.addLog("UPDATE_PIPELINES_INFOS", id);
             return Promise.resolve('ok!');
         } catch (err) {
             return Promise.reject(err);

@@ -40,8 +40,8 @@ export const getPipeline = (id: string) => {
  * @param query 
  * @returns 
  */
-export const getPipelines = (name: string, pageSize: number, current: number) => {
-    return callStorage('getPipelines', { name, pageSize, pageIndex: current - 1 });
+export const getPipelines = (name: string, pageSize: number, current: number, sorter: { sortField?: string, sortOrder?: string }) => {
+    return callStorage('getPipelines', { name, pageSize, pageIndex: current - 1, sorter });
 }
 
 /**

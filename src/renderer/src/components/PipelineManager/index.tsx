@@ -1,13 +1,14 @@
 import { Button, Flex, Modal, Table, TableColumnsType, TableProps } from 'antd';
 import style from './index.module.less'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import PipelineList from '@renderer/components/PipelineList';
-import { deletePipeline, getPipelines } from '@renderer/api';
+import { deletePipeline, getPipelines, updatePipelineBasicInfo } from '@renderer/api';
 import { debounce } from '@renderer/utils/methods';
 import Search from 'antd/es/input/Search';
 import { errorMsg } from '@renderer/utils/message';
 import { ExclamationCircleFilled } from '@ant-design/icons';
-
+import { useNavigate } from 'react-router';
+import PipelineInfos from '@renderer/components/PipelineInfos';
 const loadDataDebouncd = debounce(50);
 
 interface IProps { }
@@ -21,6 +22,7 @@ interface DataType {
 }
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
+    const navigate = useNavigate();
     const [message, messageContextHolder] = errorMsg();
     const [modal, modalContextHolder] = Modal.useModal();
     const [selectedIds, setSelectedIds] = useState<React.Key[]>([]);
@@ -31,6 +33,9 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     const [pageSize, setPageSize] = useState(20);
     const [current, setCurrent] = useState(1);
     const [keywords, setKeywords] = useState('');
+    const [sorter, setSorter] = useState({ sortField: '', sortOrder: '' });
+    const [editing, setEditingId] = useState<DataType>();
+    const isShowEditingModal = useMemo(() => !!editing, [editing]);
 
     const toDelete = async (id?: string) => {
         modal.confirm({
@@ -44,7 +49,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                     const toDeleteIds = id ? [id] : selectedIds as string[];
                     setDeleteLoading(true);
                     await deletePipeline(toDeleteIds);
-                    loadData(keywords, pageSize, current);
+                    loadData(keywords, pageSize, current, sorter);
                     setSelectedIds(selectedIds.filter(item => !toDeleteIds.includes(item as string)));
                 } catch (err: any) {
                     message(err);
@@ -58,14 +63,32 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         })
     };
 
+    const toDesing = (id: string) => {
+        navigate(`/pipelineDesigner/${id}`)
+    }
+
     const toRun = () => {
         setRunLoading(true);
         //@todo
     }
 
-    const loadData = (name, pageSize, current) => {
+    const toEdit = (pipeline: DataType) => {
+        setEditingId(pipeline);
+    }
+
+    const doEdit = async (params) => {
+        try {
+            await updatePipelineBasicInfo(editing?.id as string, params);
+            loadData(keywords, pageSize, current, sorter);
+            setEditingId(undefined);
+        } catch (err: any) {
+            message(err?.message ?? err);
+        }
+    }
+
+    const loadData = (name, pageSize, current, sorter) => {
         loadDataDebouncd(async () => {
-            const res = await getPipelines(name, pageSize, current);
+            const res = await getPipelines(name, pageSize, current, sorter);
             const { data, total } = res;
             setTotal(total);
             setDataSource(data);
@@ -78,14 +101,16 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         setKeywords(e);
     }
 
-    const onTableChange = ({ current, pageSize }) => {
+    const onTableChange = (pagination, filters, sorter, extra) => {
+        const { current, pageSize } = pagination;
         setCurrent(current);
+        setSorter({ sortField: sorter.field, sortOrder: sorter.order === 'ascend' && 'ASC' || 'DESC' })
         setPageSize(pageSize);
     }
 
     useEffect(() => {
-        loadData(keywords, pageSize, current);
-    }, [keywords, current, pageSize]);
+        loadData(keywords, pageSize, current, sorter);
+    }, [keywords, current, pageSize, sorter]);
 
     const hasSelected = selectedIds.length > 0;
 
@@ -117,12 +142,20 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                     onChange={onTableChange}
                     handlers={{
                         run: (e: DataType) => console.log(e),
-                        edit: (e: DataType) => console.log(e),
+                        edit: (e: DataType) => toEdit(e),
+                        design: (e: DataType) => toDesing(e.id as string),
                         delete: (e: DataType) => toDelete(e.id as string),
                     }}
                 >
                 </PipelineList>
             </div>
+            {
+                isShowEditingModal ?
+                    <Modal title="编辑" footer={null} open={true} onCancel={() => setEditingId(undefined)}>
+                        <PipelineInfos okBtnLabel='确定' doAction={doEdit} defaults={editing}></PipelineInfos>
+                    </Modal>
+                    : null
+            }
         </div>
     </>
 }

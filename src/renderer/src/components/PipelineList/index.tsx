@@ -1,12 +1,11 @@
-import { Button, Flex, Space, Table, TableColumnsType, TableProps, Tooltip } from 'antd';
+import { Space, Table, TableColumnsType, TableProps, Tooltip } from 'antd';
 import style from './index.module.less'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { debounce } from '@renderer/utils/methods';
-import Column from 'antd/lib/table/Column';
 
 const updateScrollHeightDebounce = debounce();
 
-type Thandlers = Record<'run' | 'edit' | 'delete', (e: DataType) => void>;
+type Thandlers = Record<'run' | 'edit' | 'design' | 'delete', (e: DataType) => void>;
 
 interface IProps {
     total: number;
@@ -15,7 +14,7 @@ interface IProps {
     dataSource: DataType[];
     selectedIds: React.Key[];
     onSelect: (e: React.Key[]) => void;
-    onChange: (e: any) => void;
+    onChange: (pagination: any, filters: any, sorter: any, extra: any) => void;
     handlers: Thandlers;
 }
 
@@ -36,6 +35,7 @@ const renderOperations = (_: any, record: DataType, handlers: Thandlers) => {
         <Space size="middle">
             <a onClick={() => handlers.run(record)}>运行</a>
             <a onClick={() => handlers.edit(record)}>编辑</a>
+            <a onClick={() => handlers.design(record)}>设计</a>
             <a onClick={() => handlers.delete(record)}>删除</a>
         </Space>
     </>
@@ -45,8 +45,8 @@ const createColumns = (handlers: Thandlers): TableColumnsType<DataType> => {
     return [
         { title: '名称', dataIndex: 'name', ellipsis: { showTitle: false }, render: renderTooltip },
         { title: '描述', dataIndex: 'descriptions', ellipsis: { showTitle: false }, render: renderTooltip },
-        { title: '更新时间', dataIndex: 'updated_at', },
-        { title: '创建时间', dataIndex: 'created_at' },
+        { title: '更新时间', dataIndex: 'updated_at', sorter: true, sortDirections: ['ascend', 'descend'] },
+        { title: '创建时间', dataIndex: 'created_at', sorter: true, sortDirections: ['ascend', 'descend'] },
         { title: '操作', dataIndex: 'operations', render: (_: any, record: DataType) => renderOperations(_, record, handlers) },
     ];
 }
@@ -66,8 +66,8 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         })
     }
 
-    const onPagination = (e) => {
-        onChange(e);
+    const onPagination = (pagination, filters, sorter, extra) => {
+        onChange(pagination, filters, sorter, extra);
         onSelect([]);
     }
 

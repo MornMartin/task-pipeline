@@ -9,8 +9,8 @@ const db = new Storage(app.getPath('userData'));
 function createWindow(): void {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
-        width: 920,
-        height: 670,
+        width: 1024,
+        height: 680,
         show: false,
         autoHideMenuBar: true,
         ...(process.platform === 'linux' ? { icon } : {}),
