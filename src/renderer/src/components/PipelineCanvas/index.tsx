@@ -25,6 +25,11 @@ const Component: React.FC<IProps & Record<string, any>> = ({ }): React.JSX.Eleme
     const onCanvasMouseDown = (e) => {
         const { screenX, screenY } = e;
         canvasPointerPos.current = { x: screenX, y: screenY };
+        const onMouseUp = (e) => {
+            canvasPointerPos.current = null;
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+        document.addEventListener('mouseup', onMouseUp);
     }
     const onCanvasMouseMove = (e) => {
         if (!canvasPointerPos.current) return;
@@ -47,21 +52,20 @@ const Component: React.FC<IProps & Record<string, any>> = ({ }): React.JSX.Eleme
             });
             document.getElementById(defaultNode.id)?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'center' });
             jsPlumb.current.bind(INTERCEPT_BEFORE_DROP, (params: BeforeDropParams) => {
-                console.log(params)
+                //@todo
                 return true;
-            })
+            });
             jsPlumb.current.bind(EVENT_CONNECTION, (c: Connection) => {
-                console.log('connection connected', c);
-            })
+                //@todo
+            });
             jsPlumb.current.bind(EVENT_CONNECTION_CLICK, (c: Connection) => {
+                //@todo
                 if (c.hasType(EConnectorType.defaultWithParam)) {
                     c.setType(EConnectorType.invalidWithParam)
                 } else {
                     c.setType(EConnectorType.defaultWithParam)
                 }
-                console.log('connection click', c);
-            })
-            window['p'] = jsPlumb.current;
+            });
         })
     }, [jsPlumbContainer]);
     useEffect(() => {
@@ -77,7 +81,6 @@ const Component: React.FC<IProps & Record<string, any>> = ({ }): React.JSX.Eleme
                     ref={jsPlumbContainer}
                     onMouseDown={onCanvasMouseDown}
                     onMouseMove={onCanvasMouseMove}
-                    onMouseUp={() => canvasPointerPos.current = null}
                     style={{
                         transform: `scale(${scale})`,
                         marginRight: `calc(var(--canvasWidth) * (1 - 1 - ${scale}))`,

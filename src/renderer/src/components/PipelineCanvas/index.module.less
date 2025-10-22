@@ -1,3 +1,4 @@
+@indent: 8px;
 @grid-gap: 16px;
 @grid-width: 1px;
 @grid-color: #d9d9d94d;
@@ -8,6 +9,7 @@
 @connector-default-color: @endpoint-color;
 @connector-active-color: #5c7899;
 @connector-invalid-color: #ff8c8e;
+@connector-stroke-width: 3px;
 
 .PipelineCanvas {
     box-sizing: border-box;
@@ -41,32 +43,32 @@
     top: 0;
     width: var(--canvasWidth);
     height: var(--canvasHeight);
-    background: @grid-v, @grid-h;
+    background: @grid-v, @grid-h #eee;
     transform-origin: left top;
 }
 
 .connectorDefault path {
     stroke: @connector-default-color;
-    stroke-width: 4;
+    stroke-width: @connector-stroke-width;
 }
 
 .connectorActive path,
 .connectorHover path {
     stroke: @connector-active-color;
-    stroke-width: 4;
+    stroke-width: @connector-stroke-width;
 }
 
 .connectorInvalid path {
     stroke: @connector-invalid-color;
-    stroke-width: 4;
+    stroke-width: @connector-stroke-width;
 }
 
 .connectorOverlayDefault,
 .connectorOverlayInvalid,
 .connectorOverlayActive {
     cursor: pointer;
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     border-width: 2px;
     border-style: solid;
     border-radius: 50%;
@@ -109,7 +111,7 @@
 }
 
 .nodeTitle {
-    padding-left: 16px;
+    padding-left: @indent;
     line-height: 32px;
     font-weight: bold;
     background-color: #7c9ebf;
@@ -121,7 +123,7 @@
 .nodeEventTitle,
 .nodeActionTitle {
     line-height: 24px;
-    padding: 0 8px;
+    padding: 0 @indent;
 }
 
 .nodeEventTitle {
@@ -155,6 +157,6 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    margin: 0 8px;
+    margin: 0 @indent;
     background: @endpoint-color;
 }
