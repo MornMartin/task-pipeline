@@ -24,6 +24,7 @@
 		"@ant-design/v5-patch-for-react-19": "^1.0.3",
 		"@electron-toolkit/preload": "^3.0.2",
 		"@electron-toolkit/utils": "^4.0.0",
+		"@jsplumb/browser-ui": "^6.2.10",
 		"antd": "^5.27.4",
 		"better-sqlite3": "^12.4.1",
 		"electron-updater": "^6.3.9",

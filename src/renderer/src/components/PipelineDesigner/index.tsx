@@ -9,7 +9,7 @@ interface IProps { }
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
     const navigate = useNavigate();
     const doAction = async (params) => {
-        const { id } = await createPipeline(params);
+        const id = await createPipeline(params);
         navigate(`/pipelineDesigner/${id}`);
     }
     return <>

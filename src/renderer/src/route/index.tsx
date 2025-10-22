@@ -7,6 +7,7 @@ import PipelineDesigner from "@renderer/components/PipelineDesigner";
 import PipelineManager from "@renderer/components/PipelineManager";
 import JobManager from "@renderer/components/JobManager";
 import About from "@renderer/components/About";
+import { getPipeline } from '@renderer/api';
 
 const routes: (RouteObject & Record<string, any>)[] = [
     {
@@ -22,9 +23,10 @@ const routes: (RouteObject & Record<string, any>)[] = [
             { index: true, element: <Layout><PipelineDesigner></PipelineDesigner></Layout> },
             {
                 path: ":id",
-                element: <PipelineCanvas></PipelineCanvas>,
+                element: <Layout><PipelineCanvas></PipelineCanvas></Layout>,
                 loader: async ({ params }) => {
-                    return params;
+                    const detail = await getPipeline(params.id as string);
+                    return { detail };
                 },
             },
         ],
