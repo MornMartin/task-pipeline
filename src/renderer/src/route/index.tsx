@@ -2,8 +2,8 @@ import { createBrowserRouter, RouteObject } from 'react-router';
 import { UserOutlined, FundProjectionScreenOutlined, CarryOutOutlined, AppstoreAddOutlined, AppstoreOutlined } from '@ant-design/icons';
 import Layout from '@renderer/components/Layout';
 import Dashboard from "@renderer/components/Dashboard";
-import PipelineCanvas from "@renderer/components/PipelineCanvas";
 import PipelineDesigner from "@renderer/components/PipelineDesigner";
+import PipelineCreator from "@renderer/components/PipelineCreator";
 import PipelineManager from "@renderer/components/PipelineManager";
 import JobManager from "@renderer/components/JobManager";
 import About from "@renderer/components/About";
@@ -20,10 +20,10 @@ const routes: (RouteObject & Record<string, any>)[] = [
     {
         path: '/pipelineDesigner',
         children: [
-            { index: true, element: <Layout><PipelineDesigner></PipelineDesigner></Layout> },
+            { index: true, element: <Layout><PipelineCreator></PipelineCreator></Layout> },
             {
                 path: ":id",
-                element: <Layout><PipelineCanvas></PipelineCanvas></Layout>,
+                element: <Layout><PipelineDesigner></PipelineDesigner></Layout>,
                 loader: async ({ params }) => {
                     const detail = await getPipeline(params.id as string);
                     return { detail };

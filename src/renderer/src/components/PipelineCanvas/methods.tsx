@@ -1,11 +1,10 @@
-import { ReactElement } from 'react';
+import { DOMAttributes, MouseEventHandler, ReactElement } from 'react';
 import style from './index.module.less';
-import { INode } from "@renderer/components/PipelineNodes/declare"
-import { BezierConnector, BezierSegment, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor } from '@jsplumb/browser-ui';
-export const createNode = (node: INode): ReactElement<any, any> => {
-    const { id } = node;
-    return <>
-        <div className={style.node} key={id} id={id}>
+import { INode } from "@renderer/utils/pipelineDeclares"
+import { BezierConnector, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor } from '@jsplumb/browser-ui';
+export const createNode = (node: INode, onActiveHandler = (e: INode) => { }): ReactElement<any, any> => {
+    return (
+        <div className={style.node} key={node.id} id={node.id} onClick={() => onActiveHandler(node)}>
             <div className={style.nodeTitle}>{node.name}</div>
             {
                 node.events?.length ?
@@ -14,12 +13,12 @@ export const createNode = (node: INode): ReactElement<any, any> => {
                         <div className={style.nodeEventList}>
                             {
                                 node.events.map(event => {
-                                    return <>
+                                    return (
                                         <div className={style.nodeEventItem} key={event.id}>
                                             <span>{event.name}</span>
                                             <span className={style.nodeEndPoint} id={event.id}></span>
                                         </div>
-                                    </>
+                                    )
                                 })
                             }
                         </div>
@@ -33,7 +32,7 @@ export const createNode = (node: INode): ReactElement<any, any> => {
                         <div className={style.nodeActionList}>
                             {
                                 node.actions.map(action => {
-                                    return <>
+                                    return (
                                         <div className={style.nodeActionItemWrap} key={action.id} >
                                             <div className={style.nodeActionItem}>
                                                 <span className={style.nodeEndPoint} id={action.id}></span>
@@ -42,15 +41,17 @@ export const createNode = (node: INode): ReactElement<any, any> => {
                                             <div className={style.nodeActionOutPinList}>
                                                 {
                                                     action.outPins?.map(outPin => {
-                                                        return <div className={style.nodeOutPinItem} key={outPin.id}>
-                                                            <span>{outPin.name}</span>
-                                                            <span className={style.nodeEndPoint} id={outPin.id}></span>
-                                                        </div>
+                                                        return (
+                                                            <div className={style.nodeOutPinItem} key={outPin.id}>
+                                                                <span>{outPin.name}</span>
+                                                                <span className={style.nodeEndPoint} id={outPin.id}></span>
+                                                            </div>
+                                                        )
                                                     })
                                                 }
                                             </div>
                                         </div>
-                                    </>
+                                    )
                                 })
                             }
                         </div>
@@ -58,7 +59,7 @@ export const createNode = (node: INode): ReactElement<any, any> => {
                     : null
             }
         </div>
-    </>
+    )
 }
 
 export const createDefaults = (container: Element): BrowserJsPlumbDefaults => {
