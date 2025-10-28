@@ -40,7 +40,8 @@ export const mockNodes = (length: number = 10): INode[] => {
             name: `mock-node-${index || ""}`,
             type: ENodeType.test,
             events: [
-                { id: encodeEndpointId(id, 'event'), name: 'Event 1', params: [] }
+                { id: encodeEndpointId(id, 'event'), name: 'Event 1', params: [] },
+                { id: encodeEndpointId(id, 'event2'), name: 'Event 2', params: [] },
             ],
             actions: [
                 {
@@ -51,7 +52,16 @@ export const mockNodes = (length: number = 10): INode[] => {
                         { id: encodeEndpointId(id, 'action', 'outPin1'), name: 'OutPin1 1', params: [] },
                         { id: encodeEndpointId(id, 'action', 'outPin2'), name: 'OutPin2 1', params: [] }
                     ]
-                }
+                },
+                {
+                    id: encodeEndpointId(id, 'action2'),
+                    name: 'Action 2',
+                    params: [],
+                    outPins: [
+                        { id: encodeEndpointId(id, 'action2', 'outPin1'), name: 'OutPin1 1', params: [] },
+                        { id: encodeEndpointId(id, 'action2', 'outPin2'), name: 'OutPin2 1', params: [] }
+                    ]
+                },
             ],
         }
     })

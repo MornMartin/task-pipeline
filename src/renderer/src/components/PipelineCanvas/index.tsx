@@ -9,6 +9,10 @@ import Slider from '../SliderInput';
 
 const defaultScale = 1;
 
+const minScale = 0.01;
+
+const maxScale = 2;
+
 const initDebounce = debounce();
 
 interface IProps { }
@@ -37,6 +41,15 @@ const Component: React.FC<IProps & Record<string, any>> = ({ }): React.JSX.Eleme
         const { x, y } = { x: canvasPointerPos.current.x - screenX, y: canvasPointerPos.current.y - screenY };
         canvasContainer.current?.scrollBy({ left: x, top: y });
         canvasPointerPos.current = { x: screenX, y: screenY };
+    }
+
+    const onCanvasWheel = (e) => {
+        const { ctrlKey, deltaY } = e;
+        if (!ctrlKey) return;
+        setTimeout(() => {
+            const targetScale = Math.max(Math.min(scale - deltaY / 100 * 0.1, maxScale), minScale);
+            setScale(Number(targetScale.toFixed(2)));
+        })
     }
     useEffect(() => {
         initDebounce(() => {
@@ -75,7 +88,7 @@ const Component: React.FC<IProps & Record<string, any>> = ({ }): React.JSX.Eleme
     }, [scale]);
     return <>
         <div className={style.PipelineCanvas} style={{ ['--canvasWidth']: '20000px', '--canvasHeight': '20000px' } as any}>
-            <div className={style.canvasWrap} ref={canvasContainer}>
+            <div className={style.canvasWrap} ref={canvasContainer} onWheel={onCanvasWheel}>
                 <div
                     className={style.canvas}
                     ref={jsPlumbContainer}
@@ -91,7 +104,7 @@ const Component: React.FC<IProps & Record<string, any>> = ({ }): React.JSX.Eleme
 
                 </div>
                 <div className={style.scaleBar}>
-                    <Slider min={0.01} max={2} defaultValue={defaultScale} onChange={setScale}></Slider>
+                    <Slider min={minScale} max={maxScale} value={scale} onChange={setScale}></Slider>
                 </div>
             </div>
         </div>
