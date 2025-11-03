@@ -1,6 +1,52 @@
+@param-pannel-transition: width 0.3s ease-in-out;
+@border: 1px solid #ccc;
+@operation-bar-height: 40px;
+
 .PipelineDesigner {
+    position: relative;
+    display: flex;
     width: 100%;
     height: 100%;
-    padding-top: 40px;
+    padding-top: @operation-bar-height;
     box-sizing: border-box;
+    --param-pannel-width: 320px;
+}
+
+.pipelineCanvasWrap {
+    border-top: @border;
+    transition: @param-pannel-transition;
+}
+
+.paramPannel {
+    margin-left: -1px;
+    transition: @param-pannel-transition;
+    border-left: @border;
+    border-top: @border;
+}
+
+.operations {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: @operation-bar-height;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+}
+
+.operationItem {
+    height: 20px;
+    margin-right: @operation-bar-height;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.1s ease-in-out;
+
+    &:not(.disabled):hover {
+        color: #7c9ebf;
+    }
+
+    &.disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
 }
