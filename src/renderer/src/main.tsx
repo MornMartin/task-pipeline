@@ -6,6 +6,9 @@ import App from './App'
 import { lowSaturationLight } from './theme'
 import '@ant-design/v5-patch-for-react-19'
 import locale from 'antd/locale/zh_CN'
+import { install } from '@renderer/utils/hotkeys';
+
+install();
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>

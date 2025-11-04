@@ -1,7 +1,8 @@
 import style from './index.module.less';
 import { PauseCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import PipelineCanvas from '@renderer/components/PipelineCanvas';
-import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, decodeLineId, decodeEndpointId, IOutPin, traverseNodesEndpoints, EEndpoint } from '@renderer/utils/pipelineDeclares';
+import { addHotKeyListener, CtrlKey, DeleteKey, EHotKey, generateHotKey } from '@renderer/utils/hotkeys';
+import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, decodeLineId, decodeEndpointId, IOutPin, traverseNodesEndpoints, EEndpoint, ENodeConfigType, getNodesDeleteInfos } from '@renderer/utils/pipelineDeclares';
 import { useEffect, useMemo, useRef, useState, createContext } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
 
@@ -9,18 +10,18 @@ interface IProps { }
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
     const { detail } = useLoaderData();
-    const [active, setActive] = useState<INodeConfig | null>(null);
+    const [active, setActive] = useState<INodeConfig[]>([]);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
     const [nodes, setNodes] = useState<Record<string, INode>>(mockNodes(10));
     const linesRef = useRef<Record<string, ILine>>({});
-    const [lines, setLines] = useState<Record<string, ILine>>({});
+    const [lines, setLines] = useState<Record<string, ILine>>(linesRef.current);
 
     const events = useRef<Record<string, IEvent>>({});
     const actions = useRef<Record<string, IAction>>({});
     const outPins = useRef<Record<string, IOutPin>>({});
 
-    const isShowParamPannel = useMemo(() => !!active?.payload?.id, [active]);
+    const isShowParamPannel = useMemo(() => active.length === 1, [active]);
 
     const toPlay = () => {
         setIsPlaying(true)
@@ -31,7 +32,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     }
 
     const toSave = () => {
-        mockChange()
+        // 
     }
 
     /**
@@ -42,37 +43,15 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         // console.log(lines);
         // @todo 传入子组件作为回调函数时：若作为 TSX DOM节点绑定事件函数触发，lines获取的值正确，否则获取的lines会是一个旧值；
         linesRef.current = { ...linesRef.current, [e.id]: e };
-        setLines(linesRef.current);
+        setLines({ ...linesRef.current });
     }
 
     /**
      * 激活切换时
      * @param e 
      */
-    const onActiveChange = (e: INodeConfig | null) => {
+    const onActiveChange = (e: INodeConfig[]) => {
         setActive(e);
-    }
-
-    const mockChange = () => {
-        const deleteNodeId = Object.keys(nodes).pop();
-        const nodesTemp = {};
-        for (const id in nodes) {
-            if (id !== deleteNodeId) {
-                nodesTemp[id] = nodes[id];
-            }
-        }
-        const linesTemp = {};
-        Object.keys(lines).forEach(key => {
-            const { sourceId, targetId } = decodeLineId(key);
-            const { nodeId: sourceNodeId } = decodeEndpointId(sourceId);
-            const { nodeId: targetNodeId } = decodeEndpointId(targetId);
-            if (nodesTemp[sourceNodeId] && nodesTemp[targetNodeId]) {
-                linesTemp[key] = lines[key];
-            }
-        })
-        setNodes({ ...nodesTemp });
-        setLines({ ...linesTemp });
-        linesRef.current = { ...linesTemp };
     }
 
     useEffect(() => {
@@ -81,6 +60,33 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         actions.current = endpoint.actions;
         outPins.current = endpoint.outPins;
     }, [nodes]);
+
+    useEffect(() => {
+        linesRef.current = { ...lines };
+    }, [lines])
+
+    useEffect(() => {
+        const removeCopyListener = addHotKeyListener(generateHotKey(EHotKey.copy), () => {
+            console.log('复制');
+        });
+        const removePasteListener = addHotKeyListener(generateHotKey(EHotKey.paste), () => {
+            console.log('粘贴');
+        })
+        const removeBackListener = addHotKeyListener(generateHotKey(EHotKey.back), () => {
+            console.log('撤销');
+        })
+        const removeDeleteListener = addHotKeyListener(generateHotKey(EHotKey.delete), () => {
+            const { remainsNodes = {}, remainsLines = {}, deletesNodes = {}, deletesLines = {} } = getNodesDeleteInfos(nodes, lines, active) || {};
+            setNodes(remainsNodes);
+            setLines(remainsLines);
+        });
+        return () => {
+            removeCopyListener();
+            removeBackListener();
+            removePasteListener();
+            removeDeleteListener();
+        };
+    }, [active, nodes, lines]);
 
     return <>
         <div className={style.PipelineDesigner}>

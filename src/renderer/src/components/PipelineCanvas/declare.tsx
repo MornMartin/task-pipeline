@@ -1,16 +1,7 @@
 import { ReactElement } from 'react';
 import style from './index.module.less';
-import { decodeLineId, EEndpoint, ELineStatus, encodeLineId, IAction, IEvent, ILine, INode, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
+import { decodeLineId, EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
 import { BezierConnector, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor, Connection } from '@jsplumb/browser-ui';
-
-
-export interface IDiffSources {
-    nodeIds: string;
-    lineIdIds: string;
-    eventIds: string;
-    actionIds: string;
-    outPinIds: string
-}
 
 export type TEndpoint = EEndpoint | 'node';
 
@@ -20,27 +11,10 @@ export const minScale = 0.01;
 
 export const maxScale = 2;
 
-export const idSetSeparator = ',';
-
-export const decodeDiffByIds = (currentIds: string, targetIds: string): { deletes: string[], news: string[] } => {
-    const targetIdList = targetIds ? targetIds.split(idSetSeparator) : [];
-    if (!currentIds) {
-        return { deletes: [], news: targetIdList };
-    }
-    if (!targetIds) {
-        return { deletes: currentIds ? currentIds.split(idSetSeparator) : [], news: [] };
-    }
-    let currentIdsTemp = currentIds;
-    const news: string[] = []
-    for (const id of targetIdList) {
-        const regx = new RegExp(`${id}[\\${idSetSeparator}]*`, 'g');
-        if (!regx.test(currentIdsTemp)) {
-            news.push(id);
-        }
-        currentIdsTemp = currentIdsTemp.replace(regx, '');
-    }
-    const deletes = currentIdsTemp.split(idSetSeparator);
-    return { deletes, news }
+export interface IStatus {
+    isActive?: boolean;
+    isInvalid?: boolean;
+    isParametric?: boolean;
 }
 
 const getChanges = function <T>(source: Record<string, T>, target: Record<string, T>, hasModified?: (s: T, t: T) => boolean): { deletes: Record<string, T>, news: Record<string, T>, modifies: Record<string, T> } {
@@ -288,4 +262,74 @@ export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string[
             jsPlumb.connect({ source: document.getElementById(sourceId) as Element, target: document.getElementById(targetId) as Element })
         }
     })
+}
+
+export const encodeNodeStatus = (actives: INodeConfig[] = []) => {
+    const temp: Record<string, IStatus> = {};
+    for (const item of actives) {
+        if (item.type === ENodeConfigType.eventNode) {
+            temp[item.payload.id] = { isActive: true };
+        }
+    }
+    return temp;
+}
+
+export const encodeLineStatus = (actives: INodeConfig[] = []) => {
+    const temp: Record<string, IStatus> = {};
+    for (const item of actives) {
+        if (item.type === ENodeConfigType.eventLine) {
+            temp[item.payload.id] = { isActive: true };
+        }
+    }
+    return temp;
+}
+
+export const generateInjectNodeStyels = (nodeStatus: Record<string, IStatus>): string => {
+    let temp = '';
+    for (const nodeId in nodeStatus) {
+        const { isActive, isInvalid } = nodeStatus[nodeId];
+        if (!(isActive || isInvalid)) continue;
+        temp += `
+        .${style.node}[id="${nodeId}"] {
+            border-color: ${isInvalid ? '#ff8c8e' : '#7c9ebf'};
+        }
+        .${style.node}[id="${nodeId}"] .${style.nodeTitle} {
+            background-color: ${isInvalid ? '#ff8c8e' : '#7c9ebf'};
+        }
+    `
+    }
+    return temp;
+}
+
+export const setConnectionStatus = (lineStatus: Record<string, IStatus>, jsPlumb: BrowserJsPlumbInstance) => {
+    jsPlumb.batch(() => {
+        const connections = jsPlumb.getConnections() as Connection[] || [];
+        for (const connection of connections) {
+            const lineId = encodeLineId(connection.sourceId, connection.targetId);
+            const { isActive, isInvalid, isParametric } = lineStatus[lineId] || {};
+            if (isInvalid && isParametric) {// 无效，有参数
+                connection.setType(ELineStatus.invalidWithParam);
+                continue;
+            }
+            if (isInvalid && !isParametric) {// 无效，无参数
+                connection.setType(ELineStatus.invalid);
+                continue;
+            }
+            if (isActive && isParametric) {// 激活，有参数
+                connection.setType(ELineStatus.activeWithParam);
+                continue;
+            }
+            if (isActive && !isParametric) {// 激活，无参数
+                connection.setType(ELineStatus.active);
+                continue;
+            }
+            if (isParametric) {// 未激活，有参数
+                connection.setType(ELineStatus.defaultWithParam);
+                continue;
+            }
+            // 未激活，无参数
+            connection.setType(ELineStatus.default);
+        }
+    })
+
 }

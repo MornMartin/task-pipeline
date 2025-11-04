@@ -237,3 +237,38 @@ export const traverseNodesEndpoints = (nodes: Record<string, INode>) => {
     }
     return { events: eventsTemp, actions: actionsTemp, outPins: outPinsTemp }
 }
+
+export const getNodesDeleteInfos = (nodes: Record<string, INode>, lines: Record<string, ILine>, selects: INodeConfig[]) => {
+    if (!selects.length) return null;
+    const deleteNodeIds: string[] = [];
+    const deltedLineIds: string[] = [];
+    for (const item of selects) {
+        if (item.type === ENodeConfigType.eventLine) {
+            deltedLineIds.push(item.payload.id)
+        } else if (item.type === ENodeConfigType.eventNode) {
+            deleteNodeIds.push(item.payload.id);
+        }
+    }
+    const remainsNodes: Record<string, INode> = {};
+    const remainsLines: Record<string, ILine> = {};
+    const deletesNodes: Record<string, INode> = {};
+    const deletesLines: Record<string, ILine> = {};
+    for (const id in nodes) {
+        if (!deleteNodeIds.includes(id)) {
+            remainsNodes[id] = nodes[id];
+        } else {
+            deletesNodes[id] = nodes[id];
+        }
+    }
+    for (const id in lines) {
+        const { sourceId, targetId } = decodeLineId(id);
+        const { nodeId: sourceNodeId } = decodeEndpointId(sourceId);
+        const { nodeId: targetNodeId } = decodeEndpointId(targetId);
+        if (remainsNodes[sourceNodeId] && remainsNodes[targetNodeId] && !deltedLineIds.includes(id)) {
+            remainsLines[id] = lines[id];
+        } else {
+            deletesLines[id] = lines[id];
+        }
+    }
+    return { remainsNodes, remainsLines, deletesNodes, deletesLines }
+}

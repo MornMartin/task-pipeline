@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, WheelEventHandler } from 'react'
 import { newInstance, BrowserJsPlumbInstance, EVENT_CONNECTION_CLICK, Connection, EVENT_CONNECTION, INTERCEPT_BEFORE_DROP, BeforeDropParams } from "@jsplumb/browser-ui"
 import style from './index.module.less'
 import { debounce } from '@renderer/utils/methods';
 import {
     createJsPlumbDefaults,
     createNodeUI,
-    decodeDiffByIds,
     maxScale,
     minScale,
     defaultScale,
-    IDiffSources,
-    idSetSeparator,
     registerConnectorTypes,
     registerNodeEndpoint,
     registerEventEndpoint,
@@ -19,10 +16,16 @@ import {
     unregisterEndpoint,
     disconnectLines,
     reconnectLines,
-    getChangesForJsPlumb
+    getChangesForJsPlumb,
+    encodeNodeStatus,
+    encodeLineStatus,
+    IStatus,
+    generateInjectNodeStyels,
+    setConnectionStatus
 } from './declare';
-import { INode, INodeConfig, ILine, ENodeConfigType, IAction, IEvent, decodeLineId, encodeLineId, ELineStatus } from '@renderer/utils/pipelineDeclares';
+import { INode, INodeConfig, ILine, ENodeConfigType, encodeLineId, ELineStatus } from '@renderer/utils/pipelineDeclares';
 import Slider from '../SliderInput';
+import { CtrlKey } from '@renderer/utils/hotkeys';
 
 const initDebounce = debounce();
 
@@ -31,8 +34,8 @@ const emitUIChangesDebounce = debounce(10);
 interface IProps {
     nodes: Record<string, INode>;
     lines: Record<string, ILine>;
-    active: INodeConfig | null;
-    onActiveChange: (e: INodeConfig | null) => void;
+    active: INodeConfig[];
+    onActiveChange: (e: INodeConfig[]) => void;
     onConnectionEstablish: (e: ILine) => void;
 }
 
@@ -50,9 +53,6 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const jsPlumbContainer = useRef<HTMLDivElement>(null);
     const jsPlumb = useRef<BrowserJsPlumbInstance>(null);
 
-    const [activeLine, setActiveLine] = useState<string | null>(null);
-    const [activeNode, setActiveNode] = useState<string | null>(null);
-
     const currentUIDatas = useRef<{ nodes: Record<string, INode>, lines: Record<string, ILine> }>({ nodes: {}, lines: {} });
     const targetUIDatas = useRef<{ nodes: Record<string, INode>, lines: Record<string, ILine> }>({ nodes, lines });
 
@@ -61,18 +61,9 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         return { ...cacheNodes, ...nodes }
     }, [cacheNodes, nodes])
 
-    const injectNodeActiveStyles = useMemo(() => {
-        if (!activeNode) return '';
-        const styles = `
-        .${style.node}[id="${activeNode}"] {
-            border-color: #7c9ebf;
-        }
-        .${style.node}[id="${activeNode}"] .${style.nodeTitle} {
-            background-color: #7c9ebf;
-        }
-        `
-        return styles;
-    }, [activeNode]);
+    const activeRef = useRef<INodeConfig[]>(active);
+    const nodeStatus = useMemo<Record<string, IStatus>>(() => encodeNodeStatus(active), [active]);
+    const lineStatus = useMemo<Record<string, IStatus>>(() => encodeLineStatus(active), [active]);
 
     /**
      * 监听鼠标按下
@@ -103,7 +94,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         canvasDragStartPos.current = { x: screenX, y: screenY };
     }
 
-    const onCanvasWheel = (e) => {
+    const onCanvasWheel: WheelEventHandler<HTMLDivElement> = (e) => {
         const { ctrlKey, deltaY } = e;
         if (!ctrlKey) return;
         // 画布缩放
@@ -114,16 +105,47 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const onCanvasClick = (e) => {
         // 非画布空白处点击时忽略
         if (e.target !== jsPlumbContainer.current) return;
-        onActiveChange(null);
+        // Ctrl按下时，忽略画布空白处点击
+        if (CtrlKey.down) return;
+        onActiveChange([]);
     }
 
+    /**
+     * 节点点击时
+     * @param e 
+     */
     const onNodeClick = (e: INode) => {
-        onActiveChange({ type: ENodeConfigType.eventNode, payload: { id: e.id } });
+        const { id } = e;
+        const isActived = !!active.find(item => item.payload.id === id);
+        const currentNodeActive = [{ type: ENodeConfigType.eventNode, payload: { id } }];
+        if (CtrlKey.down && isActived) {
+            onActiveChange(active.filter(item => item.payload.id !== id));
+        } else if (CtrlKey.down && !isActived) {
+            onActiveChange(active.concat(currentNodeActive));
+        }
+        else {
+            onActiveChange(currentNodeActive);
+        }
     }
 
-    const onLineClick = (e: ILine) => {
-        const { id, sourceId, targetId } = e;
-        onActiveChange({ type: ENodeConfigType.eventLine, payload: { id, sourceId, targetId } });
+    /**
+     * 连线点击时
+     * @param e 
+     */
+    const onLineClick = (e: Connection) => {
+        const active = activeRef.current;// 该函数被调用时，作用域中active为旧值（初始值）
+        const { sourceId, targetId } = e;
+        const id = encodeLineId(sourceId, targetId);
+        const isActived = !!active.find(item => item.payload.id === id);
+        const currentNodeActive = [{ type: ENodeConfigType.eventLine, payload: { id, sourceId, targetId } }];
+        if (CtrlKey.down && isActived) {
+            onActiveChange(active.filter(item => item.payload.id !== id));
+        } else if (CtrlKey.down && !isActived) {
+            onActiveChange(active.concat(currentNodeActive));
+        }
+        else {
+            onActiveChange(currentNodeActive);
+        }
     }
 
     const setNodeIntoView = (node: INode) => {
@@ -190,10 +212,14 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
             });
             jsPlumb.current.bind(EVENT_CONNECTION_CLICK, (c: Connection) => {
                 //连线点击
-                onLineClick(c as any);
+                onLineClick(c);
             });
         })
     }, [jsPlumbContainer]);
+
+    useEffect(() => {
+        activeRef.current = active;
+    }, [active])
 
     useEffect(() => {
         jsPlumb?.current?.setZoom(scale);
@@ -202,17 +228,9 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     }, [scale]);
 
     useEffect(() => {
-        const { type } = active || {};
-        const { id } = active?.payload || {};
-        setActiveLine(type === ENodeConfigType.eventLine ? id as string : null);
-        setActiveNode(type === ENodeConfigType.eventNode ? id as string : null);
-    }, [active])
-
-    useEffect(() => {
-        for (const connection of (jsPlumb.current?.getConnections() as Connection[] || [])) {
-            connection.setType(connection.id === activeLine ? ELineStatus.active : ELineStatus.default);
-        }
-    }, [activeLine]);
+        if (!jsPlumb.current) return;
+        setConnectionStatus(lineStatus, jsPlumb.current);
+    }, [lineStatus])
 
     useEffect(() => {
         targetUIDatas.current = { nodes: { ...nodes }, lines: { ...lines } };
@@ -221,7 +239,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
 
     return <>
         <div className={style.PipelineCanvas} style={{ ['--canvasWidth']: '20000px', '--canvasHeight': '20000px' } as any}>
-            <style>{injectNodeActiveStyles}</style>
+            <style>{generateInjectNodeStyels(nodeStatus)}</style>
             <div className={style.canvasWrap} ref={canvasContainer} onWheel={onCanvasWheel} onMouseDown={onCanvasClick}>
                 <div
                     className={style.canvas}
