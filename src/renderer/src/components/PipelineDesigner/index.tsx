@@ -2,7 +2,7 @@ import style from './index.module.less';
 import { PauseCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import PipelineCanvas from '@renderer/components/PipelineCanvas';
 import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, decodeLineId, decodeEndpointId, IOutPin, traverseNodesEndpoints, EEndpoint } from '@renderer/utils/pipelineDeclares';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, createContext } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
 
 interface IProps { }
@@ -12,8 +12,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     const [active, setActive] = useState<INodeConfig | null>(null);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
-    const nodesRef = useRef<Record<string, INode>>(mockNodes(10));
-    const [nodes, setNodes] = useState<Record<string, INode>>({ ...nodesRef.current });
+    const [nodes, setNodes] = useState<Record<string, INode>>(mockNodes(10));
     const linesRef = useRef<Record<string, ILine>>({});
     const [lines, setLines] = useState<Record<string, ILine>>({});
 
@@ -35,9 +34,23 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         mockChange()
     }
 
+    /**
+     * 连线建立时
+     * @param e 
+     */
     const onConnectionEstablish = (e: ILine) => {
+        // console.log(lines);
+        // @todo 传入子组件作为回调函数时：若作为 TSX DOM节点绑定事件函数触发，lines获取的值正确，否则获取的lines会是一个旧值；
         linesRef.current = { ...linesRef.current, [e.id]: e };
         setLines(linesRef.current);
+    }
+
+    /**
+     * 激活切换时
+     * @param e 
+     */
+    const onActiveChange = (e: INodeConfig | null) => {
+        setActive(e);
     }
 
     const mockChange = () => {
@@ -59,7 +72,6 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         })
         setNodes({ ...nodesTemp });
         setLines({ ...linesTemp });
-        nodesRef.current = { ...nodesTemp };
         linesRef.current = { ...linesTemp };
     }
 
@@ -77,7 +89,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                     nodes={nodes}
                     lines={lines}
                     active={active}
-                    onActiveChange={setActive}
+                    onActiveChange={onActiveChange}
                     onConnectionEstablish={onConnectionEstablish}
                 >
                 </PipelineCanvas>
