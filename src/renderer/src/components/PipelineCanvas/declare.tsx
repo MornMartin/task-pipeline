@@ -3,20 +3,42 @@ import style from './index.module.less';
 import { decodeLineId, EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
 import { BezierConnector, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor, Connection } from '@jsplumb/browser-ui';
 
-export type TEndpoint = EEndpoint | 'node';
+/**
+ * jsPlumb注册端点类型
+ */
+export type TJsPlumbEndpoint = EEndpoint | 'node';
 
+/**
+ * 默认画布缩放
+ */
 export const defaultScale = 1;
 
+/**
+ * 最小画布缩放
+ */
 export const minScale = 0.01;
 
+/**
+ * 最大画布缩放
+ */
 export const maxScale = 2;
 
+/**
+ * 连线/节点的状态
+ */
 export interface IStatus {
     isActive?: boolean;
     isInvalid?: boolean;
     isParametric?: boolean;
 }
 
+/**
+ * 获取变化
+ * @param source 
+ * @param target 
+ * @param hasModified 
+ * @returns 
+ */
 const getChanges = function <T>(source: Record<string, T>, target: Record<string, T>, hasModified?: (s: T, t: T) => boolean): { deletes: Record<string, T>, news: Record<string, T>, modifies: Record<string, T> } {
     const sourceCopies = { ...source };
     const targetCopies = { ...target };
@@ -34,6 +56,12 @@ const getChanges = function <T>(source: Record<string, T>, target: Record<string
     return { deletes: { ...sourceCopies }, news, modifies };
 }
 
+/**
+ * 获取UI到jsPlumb的变化
+ * @param source 
+ * @param target 
+ * @returns 
+ */
 export const getChangesForJsPlumb = (source: { nodes: Record<string, INode>, lines: Record<string, ILine> }, target: { nodes: Record<string, INode>, lines: Record<string, ILine> }) => {
     const { nodes: sourceNodes, lines: sourceLines } = source;
     const { events: sourceEvents, actions: sourceActions, outPins: sourceOutPins } = traverseNodesEndpoints(sourceNodes);
@@ -48,6 +76,12 @@ export const getChangesForJsPlumb = (source: { nodes: Record<string, INode>, lin
 
 }
 
+/**
+ * 生成节点UI
+ * @param node 
+ * @param onActiveHandler 
+ * @returns 
+ */
 export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): ReactElement<any, any> => {
     const { id, styleInfo } = node;
     const { left, top } = styleInfo;
@@ -110,6 +144,11 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
     )
 }
 
+/**
+ * 生成JsPlumb默认配置项
+ * @param container 
+ * @returns 
+ */
 export const createJsPlumbDefaults = (container: Element): BrowserJsPlumbDefaults => {
     return {
         container,// 容器节点
@@ -120,6 +159,11 @@ export const createJsPlumbDefaults = (container: Element): BrowserJsPlumbDefault
     }
 }
 
+/**
+ * 生成连线配置项
+ * @param type 
+ * @returns 
+ */
 const generateConnectorOptions = (type: ELineStatus): ConnectionTypeDescriptor => {
     switch (type) {
         case ELineStatus.default: {
@@ -170,6 +214,11 @@ const generateConnectorOptions = (type: ELineStatus): ConnectionTypeDescriptor =
     }
 }
 
+/**
+ * 注册连线类型
+ * @param jsPlumb 
+ * @returns 
+ */
 export const registerConnectorTypes = (jsPlumb: BrowserJsPlumbInstance) => {
     return jsPlumb.registerConnectionTypes({
         [ELineStatus.default]: generateConnectorOptions(ELineStatus.default),
@@ -181,26 +230,35 @@ export const registerConnectorTypes = (jsPlumb: BrowserJsPlumbInstance) => {
     })
 }
 
-const generateEndpointOptions = (type: TEndpoint): EndpointOptions => {
-    const baseOptions: EndpointOptions = {
-        endpoint: 'Dot',
-        anchor: 'Center',
-        paintStyle: { fill: '#ee000000' },
-        connectorClass: style.connectorDefault,
-        connectorHoverClass: style.connectorHover,
-    }
+/**
+ * 基础端点配置项
+ */
+const baseEndpointOptions: EndpointOptions = {
+    endpoint: 'Dot',
+    anchor: 'Center',
+    paintStyle: { fill: '#ee000000' },
+    connectorClass: style.connectorDefault,
+    connectorHoverClass: style.connectorHover,
+}
+
+/**
+ * 生成端点配置项
+ * @param type 
+ * @returns 
+ */
+const generateEndpointOptions = (type: TJsPlumbEndpoint): EndpointOptions => {
     switch (type) {
         case 'node': {
             return { endpoint: 'Dot', source: false, target: false, paintStyle: { fill: '#00000000' } }
         }
         case EEndpoint.event: {
-            return { ...baseOptions, source: true, target: false }
+            return { ...baseEndpointOptions, source: true, target: false }
         }
         case EEndpoint.action: {
-            return { ...baseOptions, source: false, target: true }
+            return { ...baseEndpointOptions, source: false, target: true }
         }
         case EEndpoint.outPin: {
-            return { ...baseOptions, source: true, target: false }
+            return { ...baseEndpointOptions, source: true, target: false }
         }
         default: {
             return {}
@@ -208,30 +266,74 @@ const generateEndpointOptions = (type: TEndpoint): EndpointOptions => {
     }
 }
 
-const registerEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string, options: EndpointOptions) => {
+/**
+ * 注册端点
+ * @param jsPlumb 
+ * @param id 
+ * @param options 
+ * @returns 
+ */
+export const registerEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string, options: EndpointOptions) => {
     return jsPlumb.addEndpoint(document.getElementById(id) as Element, options);
 }
 
-export const registerNodeEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
-    return registerEndpoint(jsPlumb, id, generateEndpointOptions('node'));
-}
-
-export const registerEventEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
-    return registerEndpoint(jsPlumb, id, generateEndpointOptions(EEndpoint.event));
-}
-
-export const registerActionEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
-    return registerEndpoint(jsPlumb, id, generateEndpointOptions(EEndpoint.action));
-}
-
-export const registerOutPinEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
-    return registerEndpoint(jsPlumb, id, generateEndpointOptions(EEndpoint.outPin));
-}
-
+/**
+ * 销毁端点
+ * @param jsPlumb 
+ * @param id 
+ * @returns 
+ */
 export const unregisterEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
     return jsPlumb.removeAllEndpoints(document.getElementById(id) as Element, false);
 }
 
+/**
+ * 注册节点拖拽
+ * @param jsPlumb 
+ * @param id 
+ * @returns 
+ */
+export const registerNodeEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
+    return registerEndpoint(jsPlumb, id, generateEndpointOptions('node'));
+}
+
+/**
+ * 注册event端点
+ * @param jsPlumb 
+ * @param id 
+ * @returns 
+ */
+export const registerEventEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
+    return registerEndpoint(jsPlumb, id, generateEndpointOptions(EEndpoint.event));
+}
+
+/**
+ * 注册action端点
+ * @param jsPlumb 
+ * @param id 
+ * @returns 
+ */
+export const registerActionEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
+    return registerEndpoint(jsPlumb, id, generateEndpointOptions(EEndpoint.action));
+}
+
+/**
+ * 注册outPin端点
+ * @param jsPlumb 
+ * @param id 
+ * @returns 
+ */
+export const registerOutPinEndpoint = (jsPlumb: BrowserJsPlumbInstance, id: string) => {
+    return registerEndpoint(jsPlumb, id, generateEndpointOptions(EEndpoint.outPin));
+}
+
+
+/**
+ * 移除连线
+ * @param jsPlumb 
+ * @param lineIds 
+ * @returns 
+ */
 export const disconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string[]) => {
     const lineIdMap = {};
     for (const lineId of lineIds) {
@@ -250,20 +352,34 @@ export const disconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string
     }
 }
 
+/**
+ * 添加连线
+ * @param jsPlumb 
+ * @param lineIds 
+ */
 export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string[]) => {
     jsPlumb.batch(() => {
-        const connections = jsPlumb.getConnections() as Array<Connection>;// 当前版本查询连线得通过端点DOM，极不合理
-        const existedLines = connections.map(item => {
-            const { sourceId, targetId } = item;
-            return encodeLineId(sourceId, targetId);
-        })
-        for (const lineId of lineIds.filter(item => !existedLines.includes(item))) {// 添加连线时屏蔽当前已有连线
+        for (const lineId of lineIds) {
             const { sourceId, targetId } = decodeLineId(lineId);
-            jsPlumb.connect({ source: document.getElementById(sourceId) as Element, target: document.getElementById(targetId) as Element })
+            jsPlumb.connect({
+                source: document.getElementById(sourceId) as Element,
+                target: document.getElementById(targetId) as Element,
+                connector: BezierConnector.type,
+                anchor: baseEndpointOptions.anchor,
+                endpoint: baseEndpointOptions.endpoint,
+                endpointStyle: baseEndpointOptions.paintStyle,
+                cssClass: baseEndpointOptions.connectorClass,
+                hoverClass: baseEndpointOptions.connectorHoverClass,
+            })
         }
     })
 }
 
+/**
+ * 编码节点状态
+ * @param actives 
+ * @returns 
+ */
 export const encodeNodeStatus = (actives: INodeConfig[] = []) => {
     const temp: Record<string, IStatus> = {};
     for (const item of actives) {
@@ -274,6 +390,11 @@ export const encodeNodeStatus = (actives: INodeConfig[] = []) => {
     return temp;
 }
 
+/**
+ * 编码连线状态
+ * @param actives 
+ * @returns 
+ */
 export const encodeLineStatus = (actives: INodeConfig[] = []) => {
     const temp: Record<string, IStatus> = {};
     for (const item of actives) {
@@ -284,6 +405,11 @@ export const encodeLineStatus = (actives: INodeConfig[] = []) => {
     return temp;
 }
 
+/**
+ * 生成节点状态注入样式
+ * @param nodeStatus 
+ * @returns 
+ */
 export const generateInjectNodeStyels = (nodeStatus: Record<string, IStatus>): string => {
     let temp = '';
     for (const nodeId in nodeStatus) {
@@ -301,6 +427,11 @@ export const generateInjectNodeStyels = (nodeStatus: Record<string, IStatus>): s
     return temp;
 }
 
+/**
+ * 设置连线状态
+ * @param lineStatus 
+ * @param jsPlumb 
+ */
 export const setConnectionStatus = (lineStatus: Record<string, IStatus>, jsPlumb: BrowserJsPlumbInstance) => {
     jsPlumb.batch(() => {
         const connections = jsPlumb.getConnections() as Connection[] || [];

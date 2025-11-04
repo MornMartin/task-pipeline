@@ -2,13 +2,15 @@ import style from './index.module.less';
 import { PauseCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import PipelineCanvas from '@renderer/components/PipelineCanvas';
 import { addHotKeyListener, CtrlKey, DeleteKey, EHotKey, generateHotKey } from '@renderer/utils/hotkeys';
-import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, decodeLineId, decodeEndpointId, IOutPin, traverseNodesEndpoints, EEndpoint, ENodeConfigType, getNodesDeleteInfos } from '@renderer/utils/pipelineDeclares';
+import { useMessage } from '@renderer/utils/message';
+import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, decodeLineId, decodeEndpointId, IOutPin, traverseNodesEndpoints, EEndpoint, ENodeConfigType, getNodesDeleteInfos, getNodesCopyInfos, getNodesPasteInfos } from '@renderer/utils/pipelineDeclares';
 import { useEffect, useMemo, useRef, useState, createContext } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
 
 interface IProps { }
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
+    const [showMessage, contextHolder] = useMessage();
     const { detail } = useLoaderData();
     const [active, setActive] = useState<INodeConfig[]>([]);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -33,6 +35,36 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
 
     const toSave = () => {
         // 
+    }
+
+    const toDelete = (nodes: Record<string, INode>, lines: Record<string, ILine>, selects: INodeConfig[]) => {
+        const { remainsNodes = {}, remainsLines = {}, deletesNodes = {}, deletesLines = {} } = getNodesDeleteInfos(nodes, lines, selects) || {};
+        setNodes(remainsNodes);
+        setLines(remainsLines);
+    }
+
+    const toCopy = async (nodes: Record<string, INode>, lines: Record<string, ILine>, selects: INodeConfig[]) => {
+        try {
+            const data = getNodesCopyInfos(nodes, lines, selects);
+            await window.navigator.clipboard.writeText(JSON.stringify(data));
+            showMessage('复制成功', 'success');
+        } catch (err: any) {
+            showMessage(`复制失败: ${err?.message ?? err}`, 'error');
+        }
+    }
+
+    const toPaste = async (nodes: Record<string, INode>, lines: Record<string, ILine>) => {
+        try {
+            const data = await window.navigator.clipboard.readText();
+            const { copyNodes, copyLines, copyNodeIds } = JSON.parse(data);
+            const { pasteNodes, pasteLines, idChanges } = getNodesPasteInfos(copyNodes, copyLines, copyNodeIds);
+            setNodes({ ...nodes, ...pasteNodes });
+            setLines({ ...lines, ...pasteLines });
+            console.log(pasteNodes, pasteLines, idChanges);
+            showMessage('粘贴成功', 'success');
+        } catch (err: any) {
+            showMessage(`粘贴失败: ${err?.message ?? err}`, 'error');
+        }
     }
 
     /**
@@ -66,30 +98,23 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     }, [lines])
 
     useEffect(() => {
-        const removeCopyListener = addHotKeyListener(generateHotKey(EHotKey.copy), () => {
-            console.log('复制');
-        });
-        const removePasteListener = addHotKeyListener(generateHotKey(EHotKey.paste), () => {
-            console.log('粘贴');
-        })
+        const removeCopyListener = addHotKeyListener(generateHotKey(EHotKey.copy), () => toCopy(nodes, lines, active));
+        const removePasteListener = addHotKeyListener(generateHotKey(EHotKey.paste), () => toPaste(nodes, lines))
         const removeBackListener = addHotKeyListener(generateHotKey(EHotKey.back), () => {
             console.log('撤销');
         })
-        const removeDeleteListener = addHotKeyListener(generateHotKey(EHotKey.delete), () => {
-            const { remainsNodes = {}, remainsLines = {}, deletesNodes = {}, deletesLines = {} } = getNodesDeleteInfos(nodes, lines, active) || {};
-            setNodes(remainsNodes);
-            setLines(remainsLines);
-        });
+        const removeDeleteListener = addHotKeyListener(generateHotKey(EHotKey.delete), () => toDelete(nodes, lines, active));
         return () => {
             removeCopyListener();
             removeBackListener();
             removePasteListener();
             removeDeleteListener();
         };
-    }, [active, nodes, lines]);
+    }, [nodes, lines, active]);
 
     return <>
         <div className={style.PipelineDesigner}>
+            {contextHolder}
             <div className={style.pipelineCanvasWrap} style={{ width: isShowParamPannel ? 'calc(100% - var(--param-pannel-width))' : '100%' }}>
                 <PipelineCanvas
                     nodes={nodes}

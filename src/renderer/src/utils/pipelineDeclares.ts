@@ -176,10 +176,14 @@ export const decodeLineId = (lineId: string): { sourceId: string, targetId: stri
     return { sourceId, targetId };
 }
 
+export const createNodeId = () => {
+    return window.crypto.randomUUID();
+}
+
 export const mockNodes = (length: number = 10): Record<string, INode> => {
     const temp = {};
     for (let i = 0; i < length; i++) {
-        const id = window.crypto.randomUUID();
+        const id = createNodeId();
         const node: INode = {
             id,
             name: `mock-node-${i || ""}`,
@@ -238,23 +242,28 @@ export const traverseNodesEndpoints = (nodes: Record<string, INode>) => {
     return { events: eventsTemp, actions: actionsTemp, outPins: outPinsTemp }
 }
 
-export const getNodesDeleteInfos = (nodes: Record<string, INode>, lines: Record<string, ILine>, selects: INodeConfig[]) => {
-    if (!selects.length) return null;
-    const deleteNodeIds: string[] = [];
-    const deltedLineIds: string[] = [];
+const decodeNodeConfigList = (selects: INodeConfig[]) => {
+    const selectNodes: string[] = [];
+    const selectLines: string[] = [];
     for (const item of selects) {
         if (item.type === ENodeConfigType.eventLine) {
-            deltedLineIds.push(item.payload.id)
+            selectLines.push(item.payload.id)
         } else if (item.type === ENodeConfigType.eventNode) {
-            deleteNodeIds.push(item.payload.id);
+            selectNodes.push(item.payload.id);
         }
     }
+    return { selectNodes, selectLines };
+}
+
+export const getNodesDeleteInfos = (nodes: Record<string, INode>, lines: Record<string, ILine>, selects: INodeConfig[]) => {
+    if (!selects.length) return null;
+    const { selectNodes, selectLines } = decodeNodeConfigList(selects);
     const remainsNodes: Record<string, INode> = {};
     const remainsLines: Record<string, ILine> = {};
     const deletesNodes: Record<string, INode> = {};
     const deletesLines: Record<string, ILine> = {};
     for (const id in nodes) {
-        if (!deleteNodeIds.includes(id)) {
+        if (!selectNodes.includes(id)) {
             remainsNodes[id] = nodes[id];
         } else {
             deletesNodes[id] = nodes[id];
@@ -264,11 +273,47 @@ export const getNodesDeleteInfos = (nodes: Record<string, INode>, lines: Record<
         const { sourceId, targetId } = decodeLineId(id);
         const { nodeId: sourceNodeId } = decodeEndpointId(sourceId);
         const { nodeId: targetNodeId } = decodeEndpointId(targetId);
-        if (remainsNodes[sourceNodeId] && remainsNodes[targetNodeId] && !deltedLineIds.includes(id)) {
+        if (remainsNodes[sourceNodeId] && remainsNodes[targetNodeId] && !selectLines.includes(id)) {
             remainsLines[id] = lines[id];
         } else {
             deletesLines[id] = lines[id];
         }
     }
     return { remainsNodes, remainsLines, deletesNodes, deletesLines }
+}
+
+export const getNodesCopyInfos = (nodes: Record<string, INode>, lines: Record<string, ILine>, selects: INodeConfig[]) => {
+    const { selectNodes } = decodeNodeConfigList(selects);
+    const copyNodeIds: string[] = [];
+    const copyNodes: Record<string, INode> = {};
+    const copyLines: Record<string, ILine> = {};
+    for (const id in nodes) {
+        if (selectNodes.includes(id)) {
+            copyNodeIds.push(id);
+            copyNodes[id] = nodes[id];
+        }
+    }
+    for (const id in lines) {
+        const { sourceId, targetId } = decodeLineId(id);
+        const { nodeId: sourceNodeId } = decodeEndpointId(sourceId);
+        const { nodeId: targetNodeId } = decodeEndpointId(targetId);
+        if (selectNodes.includes(sourceNodeId) && selectNodes.includes(targetNodeId)) {// 连线仅可复制节点之间的
+            copyLines[id] = lines[id];
+        }
+    }
+    return { copyNodes, copyLines, copyNodeIds };
+}
+
+export const getNodesPasteInfos = (copyNodes: Record<string, INode>, copyLines: Record<string, ILine>, copyNodeIds: string[]) => {
+    let copyNodesStr = JSON.stringify(copyNodes);
+    let copyLinesStr = JSON.stringify(copyLines);
+    const idChanges: Record<string, string> = {};
+    for (const id of copyNodeIds) {
+        const newId = createNodeId();
+        const regx = new RegExp(id, 'g');
+        idChanges[id] = newId;
+        copyNodesStr = copyNodesStr.replaceAll(regx, newId);
+        copyLinesStr = copyLinesStr.replaceAll(regx, newId);
+    }
+    return { pasteNodes: JSON.parse(copyNodesStr), pasteLines: JSON.parse(copyLinesStr), idChanges }
 }

@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { Form, Input, Button, FormInstance } from 'antd';
 import { generateDescriptionValidator, generateNameValidator, generateRequireValidator } from '@renderer/utils/validators';
 import { formItemLayout } from '@renderer/utils/settings';
-import { errorMsg } from '@renderer/utils/message';
+import { useErrorMsg } from '@renderer/utils/message';
 
 interface IFields {
     name: string;
@@ -19,7 +19,7 @@ interface IProps {
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
     const { okBtnLabel, doAction, defaults } = props;
     const form = useRef<FormInstance>(null);
-    const [message, contextHolder] = errorMsg()
+    const [message, contextHolder] = useErrorMsg()
     const [isLoading, setIsLoading] = useState(false);
     const toCreatePipeline = async () => {
         try {

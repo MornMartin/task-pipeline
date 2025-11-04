@@ -5,7 +5,7 @@ import PipelineList from '@renderer/components/PipelineList';
 import { deletePipeline, getPipelines, updatePipelineBasicInfo } from '@renderer/api';
 import { debounce } from '@renderer/utils/methods';
 import Search from 'antd/es/input/Search';
-import { errorMsg } from '@renderer/utils/message';
+import { useErrorMsg } from '@renderer/utils/message';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
 import PipelineInfos from '@renderer/components/PipelineInfos';
@@ -23,7 +23,7 @@ interface DataType {
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
     const navigate = useNavigate();
-    const [message, messageContextHolder] = errorMsg();
+    const [message, messageContextHolder] = useErrorMsg();
     const [modal, modalContextHolder] = Modal.useModal();
     const [selectedIds, setSelectedIds] = useState<React.Key[]>([]);
     const [deleteLoading, setDeleteLoading] = useState(false);
