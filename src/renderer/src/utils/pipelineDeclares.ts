@@ -1,3 +1,4 @@
+import { createUUID } from "./methods";
 
 /**
  * 端点ID分隔符
@@ -177,7 +178,7 @@ export const decodeLineId = (lineId: string): { sourceId: string, targetId: stri
 }
 
 export const createNodeId = () => {
-    return window.crypto.randomUUID();
+    return createUUID();
 }
 
 export const mockNodes = (length: number = 10): Record<string, INode> => {

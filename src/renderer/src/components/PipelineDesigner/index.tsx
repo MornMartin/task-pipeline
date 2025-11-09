@@ -1,11 +1,15 @@
 import style from './index.module.less';
 import { PauseCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import PipelineCanvas from '@renderer/components/PipelineCanvas';
-import { addHotKeyListener, CtrlKey, DeleteKey, EHotKey, generateHotKey } from '@renderer/utils/hotkeys';
+import PropertyEditor from '@renderer/components/PropertyEditor';
+import { addHotKeyListener, EHotKey, generateHotKey } from '@renderer/utils/hotkeys';
 import { useMessage } from '@renderer/utils/message';
-import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, decodeLineId, decodeEndpointId, IOutPin, traverseNodesEndpoints, EEndpoint, ENodeConfigType, getNodesDeleteInfos, getNodesCopyInfos, getNodesPasteInfos } from '@renderer/utils/pipelineDeclares';
+import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, IOutPin, traverseNodesEndpoints, getNodesDeleteInfos, getNodesCopyInfos, getNodesPasteInfos } from '@renderer/utils/pipelineDeclares';
 import { useEffect, useMemo, useRef, useState, createContext } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
+import { createMockPropertyDefine, encodePropertyDefineJson } from '../PropertyEditor/methods';
+
+const mockPropertyDefines = encodePropertyDefineJson(createMockPropertyDefine());
 
 interface IProps { }
 
@@ -125,7 +129,11 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                 >
                 </PipelineCanvas>
             </div>
-            <div className={style.paramPannel} style={{ width: isShowParamPannel ? 'var(--param-pannel-width)' : '0' }}></div>
+            <div className={style.paramPannel} style={{ width: isShowParamPannel ? 'var(--param-pannel-width)' : '0' }}>
+                {
+                    isShowParamPannel ? <PropertyEditor propertyDefines={mockPropertyDefines} values={{}}></PropertyEditor> : null
+                }
+            </div>
             <div className={style.operations}>
                 <PlayCircleOutlined className={`${style.operationItem} ${isPlaying ? style.disabled : ''}`} onClick={toPlay} />
                 <PauseCircleOutlined className={`${style.operationItem} ${!isPlaying ? style.disabled : ''}`} onClick={toPause} />
