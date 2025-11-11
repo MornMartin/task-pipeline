@@ -1,71 +1,134 @@
-import { createUUID } from "@renderer/utils/methods";
-import { arrayContainerCtrls, ECtrlType, objectContainerCtrls, TPropertyDefine } from "./declare"
+import { createUUID, isEmpty, isNull } from "@renderer/utils/methods";
+import { arrayContainerCtrls, ECtrlType, IRenderPropertyDefine, objectContainerCtrls, TPropertyDefine } from "./declare"
 import tryDecodeFuncStr from "./tryDecodeFuncStr"
+import tryRunPropertyGetter from "./tryRunPropertyGetter";
 
-export const mergeObjects = (base: Record<string, any>, increments: Record<string, any>, isMergeArray: boolean = false) => {
-    const temp = { ...base };
-    for (const key in increments) {
-        const currentValue = increments[key];
-        const baseValue = base[key];
-        if (typeof currentValue === 'object' && !Array.isArray(currentValue)) {
-            temp[key] = mergeObjects(baseValue || {}, currentValue);
-        } else if (typeof currentValue === 'object' && Array.isArray(currentValue) && isMergeArray) {
-            temp[key] = [...(Array.isArray(baseValue) ? baseValue : []), ...currentValue];
-        } else if (typeof currentValue !== 'undefined') {// undefined 不作为有效值复写
-            temp[key] = currentValue;
+/**
+ * 合并对象
+ * @param base 
+ * @param increments 
+ * @param isMergeArray 
+ * @returns 
+ */
+export const mergeWriteBackValues = (base: any, increments: any) => {
+    if (isNull(base)) {// 源数据为空时
+        return increments;
+    }
+    if (Array.isArray(base) && Array.isArray(increments)) {// 合并数组
+        const temp = [...base];
+        for (let i = 0, item; item = increments[i]; i++) {
+            temp[i] = mergeWriteBackValues(temp[i], item);
         }
+        return temp;
+    }
+    if (typeof base === 'object' && typeof increments === 'object') {// 合并对象
+        const temp = { ...base };
+        for (const key in increments) {
+            temp[key] = mergeWriteBackValues(temp[key], increments[key]);
+        }
+        return temp;
+    }
+    // 基础数据不为对象/数组时
+    // 赋予数据不为对象/数组时
+    return increments;
+}
+
+/**
+ * 创建回写属性值
+ * @param path 
+ * @param value 
+ * @param root 
+ * @returns 
+ */
+export const createWriteBackValues = (path: TPropertyDefine[], value: any, root: Record<string, any> = {}, getArrayCtrlIndex?: (path: TPropertyDefine[], ctrl: TPropertyDefine) => number) => {
+    const toWriteBack = (parent: any, restPath: TPropertyDefine[], throughPath: TPropertyDefine[], value: any) => {
+        const nexts = restPath.slice(1);
+        const current = restPath[0];
+        const next = nexts[0];
+        if (!current) return parent;
+        const { key, type } = current;
+        const isArrayParent = Array.isArray(parent);// 上层结构是否为数组
+        const wrap = arrayContainerCtrls.includes(type) ? [] : {};
+        if (!isArrayParent && !next) {// 写入对象字段值
+            return { ...parent, [key]: objectContainerCtrls.concat(arrayContainerCtrls).includes(type) && wrap || value };
+        } else if (!isArrayParent && next) {// 写入对象字段结构
+            return { ...parent, [key]: toWriteBack(wrap, nexts, [...throughPath, current], value) };
+        } else if (isArrayParent && !next && typeof getArrayCtrlIndex == 'function') {// 写入数组值
+            const currentIndex = getArrayCtrlIndex(throughPath, current);
+            return parent.slice(0, currentIndex).concat(isEmpty(value) ? [] : [value]).concat(parent.slice(currentIndex + 1));
+        } else if (isArrayParent && next && typeof getArrayCtrlIndex == 'function') {// 写入数组对象结构
+            const currentIndex = getArrayCtrlIndex(throughPath, current);
+            return parent.slice(0, currentIndex).concat([toWriteBack(wrap, nexts, [...throughPath, current], value)]).concat(parent.slice(currentIndex + 1));
+        } else {
+            return parent;
+        }
+    }
+    return mergeWriteBackValues(root, toWriteBack(root, path, [], value));
+}
+
+/**
+ * 获取控件绑定值
+ * @param path 
+ * @param values 
+ * @returns 
+ */
+export const getPropertyValue = (path: TPropertyDefine[], values: Record<string, any>): any => {
+    let temp = values;
+    for (const item of path) {
+        temp = temp?.[item.key];
+        if (isNull(temp)) return temp;
     }
     return temp;
 }
 
-export const createWriteBackValues = (paths: TPropertyDefine[], value: any, root: Record<string, any> = {}) => {
-    const toWriteBack = (parent: any, paths: TPropertyDefine[], value: any) => {
-        const current = paths[0];
-        const nexts = paths.slice(1);
-        if (!current) return parent;
-        const { name } = current;
-        if (!nexts.length) {
-            return { ...parent, [name]: value };
-        }
-        return { ...parent, [name]: toWriteBack(arrayContainerCtrls.includes(current.type) ? [] : {}, nexts, value) };
-
-    }
-    return mergeObjects(root, toWriteBack({}, paths, value));
-}
-
-export const getWriteBackPaths = (paths: TPropertyDefine[]): TPropertyDefine[] => {
-    for (let index = 0, item; item = paths[index]; index++) {
+/**
+ * 获取回写路径
+ * @param path 
+ * @returns 
+ */
+export const getWriteBackPath = (path: TPropertyDefine[]): TPropertyDefine[] => {
+    const interpolatedFrames: TPropertyDefine[] = [];
+    const keyFrames: TPropertyDefine[] = [];
+    for (let index = 0, item; item = path[index]; index++) {
         const { isElevated, type } = item;
-        if (isElevated || arrayContainerCtrls.includes(type)) {
-            return [item].concat(paths.slice(index + 1));
+        if (isElevated) {// 当控件绑定字段需要提升时，纳入关键帧，去除此前的路径缓存
+            interpolatedFrames.length = 0;
+            keyFrames.push(item);
+        } else if (arrayContainerCtrls.includes(type)) {// 当控件绑定字段为数组时，作为关键帧处理，但保留缓存路径
+            keyFrames.push(...interpolatedFrames, item);
+            interpolatedFrames.length = 0;
+        } else if (arrayContainerCtrls.includes(keyFrames[keyFrames.length - 1]?.type)) {// 当控件上层字段为数组时，添加当前作为关键帧
+            keyFrames.push(item);
+            interpolatedFrames.length = 0;
+        } else {
+            interpolatedFrames.push(item);
         }
     }
-    return paths;
+    return keyFrames.concat(interpolatedFrames);
 }
 
+/**
+ * 分析属性定义
+ * @param ctrls 
+ * @returns 
+ */
 export const analysePropertyDefine = (ctrls: TPropertyDefine[]) => {
-    const toDecorate = (ctrls: TPropertyDefine[], parents: TPropertyDefine[] = [], onDecorate = (decorated: { id: string, ctrl: TPropertyDefine, parents: TPropertyDefine[], paths: TPropertyDefine[] }) => void 0) => {
+    const toDecorate = (ctrls: TPropertyDefine[], parents: TPropertyDefine[] = [], onDecorate = (decorated: { id: string, ctrl: TPropertyDefine, parents: TPropertyDefine[], path: TPropertyDefine[] }) => void 0) => {
         if (!Array.isArray(ctrls)) return;
         return ctrls.map(item => {
             const id = createUUID();
-            const paths = getWriteBackPaths(parents.concat([item]));
-            const decorated = { id, ctrl: item, parents, paths, children: toDecorate(item['children'], paths, onDecorate) };
-            onDecorate(decorated);
-            return decorated;
+            const path = getWriteBackPath(parents.concat([item]));
+            const decorated = { id, ctrl: item, parents, path };
+            typeof onDecorate === 'function' && onDecorate(decorated);
+            return { ...decorated, children: toDecorate(item['children'], parents.concat(item), onDecorate) } as IRenderPropertyDefine;
         })
     }
     let defaults: Record<string, any> = {};
-    const ctrlMap: Record<string, { ctrl: TPropertyDefine, parents: TPropertyDefine[], paths: TPropertyDefine[] }> = {};
-    const decoratedCtrls = toDecorate(ctrls, [], ({ id, ctrl, parents, paths }) => {
-        ctrlMap[id] = { ctrl, paths, parents };
-        defaults = createWriteBackValues(paths, ctrl.params?.['default'], defaults);
+    const decoratedCtrls: IRenderPropertyDefine[] = toDecorate(ctrls, [], ({ id, ctrl, parents, path }) => {
+        const ctrlDefaultValue = tryRunPropertyGetter(ctrl.params?.['default'], ctrl);
+        defaults = mergeWriteBackValues(defaults, createWriteBackValues(path, ctrlDefaultValue, defaults, () => 0));
     });
-    console.log(ctrls, defaults);
-    return { ctrlMap, decoratedCtrls, defaults };
-}
-
-export const createDefaultValues = (ctrls: TPropertyDefine[]): Record<string, any> => {
-    return {}
+    return { decoratedCtrls, defaults };
 }
 
 /**
@@ -117,28 +180,210 @@ export const decodePropertyDefineJson = (defines: string): TPropertyDefine[] => 
 export const createMockPropertyDefine = (): TPropertyDefine[] => {
     return [
         {
-            name: 'Input',
-            label: 'Input',
-            type: ECtrlType.Input,
-            params: {
-                default: () => 'Input'
-            }
+            key: 'obj',
+            label: 'obj',
+            type: ECtrlType.Collapse,
+            children: [
+                {
+                    key: 'obj.input',
+                    label: 'obj.input',
+                    type: ECtrlType.Input,
+                    params: {
+                        default: () => 'List Object Property'
+                    }
+                },
+                {
+                    key: 'obj.input2',
+                    label: 'obj.input2',
+                    type: ECtrlType.Input,
+                    params: {
+                        default: () => 'List Object Property'
+                    }
+                },
+                {
+                    key: 'obj.input3',
+                    label: 'obj.input3',
+                    type: ECtrlType.Input,
+                    params: {
+                        default: () => 'List Object Property'
+                    }
+                },
+                {
+                    key: 'obj.textare',
+                    label: 'obj.textare',
+                    type: ECtrlType.TextArea,
+                    params: {
+                        default: () => 'List Object Property'
+                    }
+                },
+                {
+                    key: 'obj.obj',
+                    label: 'obj.obj',
+                    type: ECtrlType.Collapse,
+                    children: [
+                        {
+                            key: 'obj.obj.input',
+                            label: 'obj.obj.input',
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'List Object Property'
+                            }
+                        },
+                    ]
+                },
+            ]
         },
+    ]
+    return [
         {
-            name: 'TextArea',
-            label: 'TextArea',
-            type: ECtrlType.TextArea,
-            params: {
-                default: 'TextArea'
-            }
-        },
-        {
-            name: 'Collapse',
+            key: createUUID(),
             label: 'Collapse',
             type: ECtrlType.Collapse,
             children: [
                 {
-                    name: 'Input_global',
+                    key: createUUID(),
+                    label: 'Input',
+                    type: ECtrlType.Input,
+                    params: {
+                        default: () => 'level-2-input'
+                    }
+                },
+                {
+                    key: createUUID(),
+                    label: 'Input',
+                    type: ECtrlType.Input,
+                    isElevated: true,
+                    params: {
+                        default: () => 'level-1-input'
+                    }
+                },
+                {
+                    key: createUUID(),
+                    label: 'Collapse',
+                    type: ECtrlType.Collapse,
+                    isElevated: true,
+                    children: [
+                        {
+                            key: createUUID(),
+                            label: 'Input',
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'level-2-input'
+                            }
+                        },
+                        {
+                            key: createUUID(),
+                            label: 'Input',
+                            type: ECtrlType.Input,
+                            isElevated: true,
+                            params: {
+                                default: () => 'level-2-input'
+                            }
+                        },
+                    ]
+                },
+                {
+                    key: createUUID(),
+                    label: 'Collapse',
+                    type: ECtrlType.Collapse,
+                    children: [
+                        {
+                            key: createUUID(),
+                            label: 'Input',
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'level-3-input'
+                            }
+                        },
+                        {
+                            key: createUUID(),
+                            label: 'Input',
+                            type: ECtrlType.Input,
+                            isElevated: false,
+                            params: {
+                                default: () => 'level-3-input'
+                            }
+                        },
+                        {
+                            key: createUUID(),
+                            label: 'Collapse',
+                            type: ECtrlType.Collapse,
+                            children: [
+                                {
+                                    key: createUUID(),
+                                    label: 'Input',
+                                    type: ECtrlType.Input,
+                                    params: {
+                                        default: () => 'level-4-input'
+                                    }
+                                },
+                                {
+                                    key: createUUID(),
+                                    label: 'Input',
+                                    type: ECtrlType.Input,
+                                    isElevated: true,
+                                    params: {
+                                        default: () => 'level-1-input'
+                                    }
+                                },
+                            ]
+                        },
+                        {
+                            key: createUUID(),
+                            label: 'Collapse',
+                            type: ECtrlType.Collapse,
+                            isElevated: true,
+                            children: [
+                                {
+                                    key: createUUID(),
+                                    label: 'Input',
+                                    type: ECtrlType.Input,
+                                    params: {
+                                        default: () => 'level-2-input'
+                                    }
+                                },
+                                {
+                                    key: createUUID(),
+                                    label: 'Input',
+                                    type: ECtrlType.Input,
+                                    isElevated: false,
+                                    params: {
+                                        default: () => 'level-2-input'
+                                    }
+                                },
+                            ]
+                        },
+                    ]
+                },
+            ]
+        },
+    ]
+    return [
+        // {
+        //     name: 'Input',
+        //     label: 'Input',
+        //     type: ECtrlType.Input,
+        //     params: {
+        //         default: (ctrl, values, injects) => {
+        //             return 'Input'
+        //         }
+        //     }
+        // },
+        // {
+        //     name: 'TextArea',
+        //     label: 'TextArea',
+        //     type: ECtrlType.TextArea,
+        //     params: {
+        //         default: 'TextArea'
+        //     }
+        // },
+        {
+            key: 'Collapse',
+            label: 'Collapse',
+            type: ECtrlType.Collapse,
+            children: [
+                {
+                    key: 'Input_global',
                     label: 'Input',
                     isElevated: true,
                     type: ECtrlType.Input,
@@ -147,7 +392,7 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                     }
                 },
                 {
-                    name: 'Input_scope',
+                    key: 'Input_scope',
                     label: 'Input',
                     isElevated: false,
                     type: ECtrlType.Input,
@@ -156,13 +401,64 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                     }
                 },
                 {
-                    name: 'Collapse_elevated',
+                    key: 'Collapse_scope',
+                    label: 'Collapse',
+                    type: ECtrlType.Collapse,
+                    children: [
+                        {
+                            key: 'Input_global',
+                            label: 'Input',
+                            isElevated: true,
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'input_global'
+                            }
+                        },
+                        {
+                            key: 'Input_scope',
+                            label: 'Input',
+                            isElevated: false,
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'Input_scope'
+                            }
+                        },
+                        {
+                            key: 'Collapse_elevated',
+                            label: 'Collapse',
+                            type: ECtrlType.Collapse,
+                            isElevated: true,
+                            children: [
+                                {
+                                    key: 'Input_elevated',
+                                    label: 'Input',
+                                    isElevated: true,
+                                    type: ECtrlType.Input,
+                                    params: {
+                                        default: () => 'Input_elevated'
+                                    }
+                                },
+                                {
+                                    key: 'Input_scope',
+                                    label: 'Input',
+                                    isElevated: false,
+                                    type: ECtrlType.Input,
+                                    params: {
+                                        default: () => 'Input_scope'
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    key: 'Collapse_elevated',
                     label: 'Collapse',
                     type: ECtrlType.Collapse,
                     isElevated: true,
                     children: [
                         {
-                            name: 'Input_elevated',
+                            key: 'Input_elevated',
                             label: 'Input',
                             isElevated: true,
                             type: ECtrlType.Input,
@@ -171,7 +467,7 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                             }
                         },
                         {
-                            name: 'Input_scope',
+                            key: 'Input_scope',
                             label: 'Input',
                             isElevated: false,
                             type: ECtrlType.Input,
@@ -181,6 +477,65 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                         },
                     ],
                 },
+                // {
+                //     name: 'List',
+                //     label: 'List',
+                //     type: ECtrlType.List,
+                //     children: [
+                //         {
+                //             name: 'Collapse_elevated',
+                //             label: 'Collapse',
+                //             type: ECtrlType.Collapse,
+                //             isElevated: false,
+                //             children: [
+                //                 {
+                //                     name: 'Collapse_scoped',
+                //                     label: 'Collapse',
+                //                     type: ECtrlType.Collapse,
+                //                     isElevated: true,
+                //                     children: [
+                //                         {
+                //                             name: 'Input_elevated',
+                //                             label: 'Input',
+                //                             isElevated: true,
+                //                             type: ECtrlType.Input,
+                //                             params: {
+                //                                 default: () => 'Input_elevated'
+                //                             }
+                //                         },
+                //                         {
+                //                             name: 'Input_scope',
+                //                             label: 'Input',
+                //                             isElevated: false,
+                //                             type: ECtrlType.Input,
+                //                             params: {
+                //                                 default: () => 'Input_scope'
+                //                             }
+                //                         },
+                //                     ],
+                //                 },
+                //                 {
+                //                     name: 'Input_elevated',
+                //                     label: 'Input',
+                //                     isElevated: true,
+                //                     type: ECtrlType.Input,
+                //                     params: {
+                //                         default: () => 'Input_elevated'
+                //                     }
+                //                 },
+                //                 {
+                //                     name: 'Input_scope',
+                //                     label: 'Input',
+                //                     isElevated: false,
+                //                     type: ECtrlType.Input,
+                //                     params: {
+                //                         default: () => 'Input_scope'
+                //                     }
+                //                 },
+                //             ],
+                //         },
+                //     ],
+                // },
             ],
         },
     ]

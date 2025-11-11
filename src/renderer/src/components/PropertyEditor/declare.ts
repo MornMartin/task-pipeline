@@ -1,5 +1,4 @@
 
-
 /**
  * 控件类型枚举
  */
@@ -17,10 +16,13 @@ export const enum ECtrlType {
     Switch = 'Switch',
     Select = 'Select',
 
-    Collapse = 'Collapse',
     Divider = 'Divider',
+
+    Collapse = 'Collapse',
     Flex = 'Flex',
     Grid = 'Grid',
+
+    List = 'List',
 }
 
 /**
@@ -43,7 +45,7 @@ export interface IPropertyDefineData {
     fields: Record<string, IPropertyDefineField>;
 }
 
-const describeNameField = '字段绑定名称';
+const describeKeyField = '字段绑定名称';
 const describeLabelField = '字段显示名称';
 const describeTipField = '字段提示内容';
 const desrcibeTypeField = '控件类型';
@@ -67,7 +69,7 @@ export type TPropertyParam<T> = T | ((propertyDefine: TPropertyDefine, propertyV
  * 输入控件基础定义
  */
 export interface IPropertyBase {
-    name: string;
+    key: string;
     label: string;
     tip?: string;
     type: ECtrlType;
@@ -79,7 +81,7 @@ const describeBase: IPropertyDefineData = {
     name: '基础控件',
     type: 'Base',
     fields: {
-        name: createDefineField('name', 'String', describeNameField),
+        name: createDefineField('key', 'String', describeKeyField),
         label: createDefineField('label', 'String', describeLabelField),
         tip: createDefineField('tip', 'String', describeTipField),
         type: createDefineField('type', ECtrlType.Base, desrcibeTypeField),
@@ -449,6 +451,28 @@ export const describeGrid: IPropertyDefineData = {
 }
 
 /**
+ * 列表容器定义
+ */
+export interface IPropertyList extends IPropertyBase {
+    type: ECtrlType.List,
+    children: [TPropertyDefine],
+    params?: {
+
+    }
+}
+export const describeList: IPropertyDefineData = {
+    name: '列表容器',
+    type: ECtrlType.List,
+    fields: {
+        ...describeBase.fields,
+        params: {
+            ...describeBase.fields.params,
+            children: {},
+        }
+    }
+}
+
+/**
  * 对象容器控件
  */
 export const objectContainerCtrls: ECtrlType[] = [ECtrlType.Collapse, ECtrlType.Flex, ECtrlType.Grid];
@@ -456,9 +480,18 @@ export const objectContainerCtrls: ECtrlType[] = [ECtrlType.Collapse, ECtrlType.
 /**
  * 数组容器控件
  */
-export const arrayContainerCtrls: ECtrlType[] = [];
+export const arrayContainerCtrls: ECtrlType[] = [ECtrlType.List];
 
 /**
  * 输入控件定义
  */
-export type TPropertyDefine = IPropertyInput | IPropertyTextArea | IPropertyInputNumber | IPropertyColorPicker | IPropertyCheckbox | IPropertyDatePicker | IPropertyTimePicker | IPropertyRadio | IPropertySlider | IPropertySwitch | IPropertySelect | IPropertyCollapse | IPropertyDivider | IPropertyFlex | IPropertyGrid;
+export type TPropertyDefine = IPropertyInput | IPropertyTextArea | IPropertyInputNumber | IPropertyColorPicker | IPropertyCheckbox | IPropertyDatePicker | IPropertyTimePicker | IPropertyRadio | IPropertySlider | IPropertySwitch | IPropertySelect | IPropertyCollapse | IPropertyDivider | IPropertyFlex | IPropertyGrid | IPropertyList;
+
+
+export interface IRenderPropertyDefine {
+    id: string;
+    ctrl: TPropertyDefine,
+    path: TPropertyDefine[],
+    parents: TPropertyDefine[],
+    children?: IRenderPropertyDefine[],
+}
