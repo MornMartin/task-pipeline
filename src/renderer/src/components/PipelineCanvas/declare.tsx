@@ -1,3 +1,4 @@
+import { Tooltip } from 'antd'
 import { ReactElement } from 'react';
 import style from './index.module.less';
 import { EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, ENodeStatus, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
@@ -88,7 +89,9 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
     const { left, top } = styleInfo;
     return (
         <div className={style.node} key={id} id={id} onClick={() => onActiveHandler(node)} style={{ left, top }}>
-            <div className={style.nodeTitle}>{node.name}</div>
+            <div className={style.nodeTitle}>
+                <Tooltip className={style.tooltipOverflowEllipsis} title={node.name} destroyOnHidden>{node.name}</Tooltip>
+            </div>
             {
                 node.events?.length ?
                     <div className={style.nodeEvents}>
@@ -98,8 +101,10 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
                                 node.events.map(event => {
                                     return (
                                         <div className={style.nodeEventItem} key={event.id}>
-                                            <span>{event.name}</span>
-                                            <span className={style.nodeEndPoint} id={event.id}></span>
+                                            <div className={style.nodeEndPointName}>
+                                                <Tooltip className={style.tooltipOverflowEllipsis} title={event.name} destroyOnHidden>{event.name}</Tooltip>
+                                            </div>
+                                            <div className={style.nodeEndPoint} id={event.id}></div>
                                         </div>
                                     )
                                 })
@@ -118,16 +123,20 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
                                     return (
                                         <div className={style.nodeActionItemWrap} key={action.id} >
                                             <div className={style.nodeActionItem}>
-                                                <span className={style.nodeEndPoint} id={action.id}></span>
-                                                <span>{action.name}</span>
+                                                <div className={style.nodeEndPoint} id={action.id}></div>
+                                                <div className={style.nodeEndPointName}>
+                                                    <Tooltip className={style.tooltipOverflowEllipsis} title={action.name} destroyOnHidden>{action.name}</Tooltip>
+                                                </div>
                                             </div>
                                             <div className={style.nodeActionOutPinList}>
                                                 {
                                                     action.outPins?.map(outPin => {
                                                         return (
                                                             <div className={style.nodeOutPinItem} key={outPin.id}>
-                                                                <span>{outPin.name}</span>
-                                                                <span className={style.nodeEndPoint} id={outPin.id}></span>
+                                                                <div className={style.nodeEndPointName}>
+                                                                    <Tooltip className={style.tooltipOverflowEllipsis} title={outPin.name} destroyOnHidden>{outPin.name}</Tooltip>
+                                                                </div>
+                                                                <div className={style.nodeEndPoint} id={outPin.id}></div>
                                                             </div>
                                                         )
                                                     })
