@@ -21,7 +21,6 @@ import {
     generateInjectNodeStyels,
     setConnectionStatus,
     ICanvasInfos,
-    resetLines
 } from './declare';
 import { INode, INodeConfig, ILine, ENodeConfigType, encodeLineId, ELineStatus, ENodeStatus } from '@renderer/utils/pipelineDeclares';
 import Slider from '../SliderInput';
@@ -211,7 +210,6 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
             Object.keys(deletedEvents).forEach(id => {
                 unregisterEndpoint(jsPlumb.current as BrowserJsPlumbInstance, id);
             });
-            resetLines(jsPlumb.current as BrowserJsPlumbInstance, modifiedLines);
             Object.keys(deletedNodes).forEach(id => {
                 unregisterEndpoint(jsPlumb.current as BrowserJsPlumbInstance, id);
             });
@@ -249,7 +247,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
             jsPlumb.current.bind(EVENT_CONNECTION, (c: Connection) => {
                 const { sourceId, targetId } = c;
                 const lineId = encodeLineId(sourceId, targetId);
-                if (currentUIDatas.current.lines[lineId]) return;
+                if (targetUIDatas.current.lines[lineId]) return;
                 onConnectionEstablish(currentUIDatas.current.lines[lineId] = { id: lineId, sourceId, targetId, status: ELineStatus.default });
             });
             jsPlumb.current.bind(EVENT_CONNECTION_CLICK, (c: Connection) => {

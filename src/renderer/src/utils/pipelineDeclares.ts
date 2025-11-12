@@ -1,6 +1,6 @@
 import { TPropertyDefine } from "@renderer/components/PropertyEditor/declare";
 import { createUUID } from "./methods";
-import { createMockPropertyDefine } from "@renderer/components/PropertyEditor/methods";
+import { analysePropertyDefine, createMockPropertyDefine } from "@renderer/components/PropertyEditor/methods";
 
 /**
  * 端点ID分隔符
@@ -195,7 +195,8 @@ export const mockNodes = (length: number = 10): Record<string, INode> => {
     for (let i = 0; i < length; i++) {
         const id = createNodeId();
         const node: INode = createMockNode(id, `mock-node-${i}`, { left: 10000 + (i % 5) * 250, top: 10000 + i * 50 })
-        temp[id] = node;
+        const params = analysePropertyDefine(node.paramDefines).defaults;
+        temp[id] = { ...node, params };
     }
     return temp;
 }

@@ -112,7 +112,8 @@ export const getWriteBackPath = (path: TPropertyDefine[]): TPropertyDefine[] => 
  * @param ctrls 
  * @returns 
  */
-export const analysePropertyDefine = (ctrls: TPropertyDefine[]) => {
+export const analysePropertyDefine = (ctrls?: TPropertyDefine[]) => {
+    if (!ctrls?.length) return { decoratedCtrls: [], defaults: {} };
     const toDecorate = (ctrls: TPropertyDefine[], parents: TPropertyDefine[] = [], onDecorate = (decorated: { id: string, ctrl: TPropertyDefine, parents: TPropertyDefine[], path: TPropertyDefine[] }) => void 0) => {
         if (!Array.isArray(ctrls)) return;
         return ctrls.map(item => {
@@ -201,14 +202,6 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                     }
                 },
                 {
-                    key: 'obj.input3',
-                    label: 'obj.input3',
-                    type: ECtrlType.Input,
-                    params: {
-                        default: () => 'List Object Property'
-                    }
-                },
-                {
                     key: 'obj.textare',
                     label: 'obj.textare',
                     type: ECtrlType.TextArea,
@@ -224,6 +217,15 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                         {
                             key: 'obj.obj.input',
                             label: 'obj.obj.input',
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'List Object Property'
+                            }
+                        },
+                        {
+                            key: 'input3',
+                            label: 'input3',
+                            isElevated: true,
                             type: ECtrlType.Input,
                             params: {
                                 default: () => 'List Object Property'

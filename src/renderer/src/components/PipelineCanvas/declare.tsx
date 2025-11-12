@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 import style from './index.module.less';
-import { decodeLineId, EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, ENodeStatus, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
+import { EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, ENodeStatus, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
 import { BezierConnector, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor, Connection } from '@jsplumb/browser-ui';
 
 /**
@@ -353,20 +353,6 @@ export const disconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string
     }
 }
 
-export const resetLines = (jsPlumb: BrowserJsPlumbInstance, lines: Record<string, ILine>) => {
-    const connections = jsPlumb.getConnections() as Array<Connection>;// 当前版本查询连线得通过端点DOM，极不合理
-    for (const item of connections) {
-        const lineId = encodeLineId(item.sourceId, item.targetId);
-        if (lines[lineId]) {
-            item.setType(lines[lineId].status);
-            delete lines[lineId];
-            if (!Object.keys(lines).length) {
-                return;
-            }
-        }
-    }
-}
-
 /**
  * 添加连线
  * @param jsPlumb 
@@ -391,9 +377,8 @@ export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lines: Record<st
     })
 }
 
-
 /**
- * 计算连线状态
+ * 计算节点状态
  */
 export const getNodeStatus = (isInvalid: boolean, isActive: boolean): ENodeStatus => {
     if (isInvalid) {// 无效
@@ -457,7 +442,6 @@ export const getLineStatus = (isInvalid: boolean, isParametric: boolean, isActiv
  * @returns 
  */
 export const encodeLineStatus = (actives: INodeConfig[] = [], lines: Record<string, ILine>) => {
-    console.log(actives, lines)
     const temp: Record<string, ELineStatus> = {};
     const activeLines: Record<string, boolean> = {};
     for (const item of actives) {
@@ -504,12 +488,14 @@ export const generateInjectNodeStyels = (nodeStatus: Record<string, ENodeStatus>
  * @param jsPlumb 
  */
 export const setConnectionStatus = (lineStatus: Record<string, ELineStatus>, jsPlumb: BrowserJsPlumbInstance) => {
+    const lineStatusTemp = { ...lineStatus };
     jsPlumb.batch(() => {
         const connections = jsPlumb.getConnections() as Connection[] || [];
         for (const connection of connections) {
             const lineId = encodeLineId(connection.sourceId, connection.targetId);
-            connection.setType(lineStatus[lineId] ?? ELineStatus.default);
+            connection.setType(lineStatusTemp[lineId] ?? ELineStatus.default);
+            delete lineStatusTemp[lineId];
+            if (!Object.keys(lineStatusTemp).length) return;
         }
     })
-
 }

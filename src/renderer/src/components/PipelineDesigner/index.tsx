@@ -7,7 +7,7 @@ import { useMessage } from '@renderer/utils/message';
 import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, IOutPin, traverseNodesEndpoints, getNodesDeleteInfos, getNodesCopyInfos, getNodesPasteInfos, ENodeConfigType, ELineStatus } from '@renderer/utils/pipelineDeclares';
 import { useEffect, useMemo, useRef, useState, createContext } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
-import { encodePropertyDefineJson } from '../PropertyEditor/methods';
+import { analysePropertyDefine, encodePropertyDefineJson } from '../PropertyEditor/methods';
 import { updatePipelineCanvasInfo } from '@renderer/api';
 import { defaultCanvasInfos, ICanvasInfos } from '../PipelineCanvas/declare';
 import { IRenderPropertyDefine, TPropertyDefine } from '../PropertyEditor/declare';
@@ -75,7 +75,13 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     const toSave = async () => {
         setIsSaving(true);
         try {
-            await updatePipelineCanvasInfo(detail.id, { nodes: JSON.stringify(nodes), lines: JSON.stringify(lines), variables: '', canvasInfos: JSON.stringify(canvasInfos.current) });
+            const params = {
+                variables: '',
+                nodes: JSON.stringify(nodes),
+                lines: JSON.stringify(lines),
+                canvasInfos: JSON.stringify(canvasInfos.current),
+            }
+            await updatePipelineCanvasInfo(detail.id, params);
             showMessage('保存成功', 'success');
         } catch (err: any) {
             showMessage(`保存失败: ${err?.message ?? err}`, 'error');
@@ -137,9 +143,11 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
      */
     const onConnectionEstablish = (e: ILine) => {
         // @todo 传入子组件作为回调函数时：若作为 TSX DOM节点绑定事件函数触发，lines获取的值正确，否则获取的lines会是一个旧值；
-        const { targetId } = e;
+        const { id, targetId } = e;
+        if (linesRef.current[id]) return;// 忽略创建建立已存在的连线
         const status = actions.current[targetId]?.paramDefines ? ELineStatus.defaultWithParam : ELineStatus.default;
-        linesRef.current = { ...linesRef.current, [e.id]: { ...e, status } };
+        const params = analysePropertyDefine(actions.current[targetId]?.paramDefines).defaults;
+        linesRef.current = { ...linesRef.current, [e.id]: { ...e, status, params } };
         setLines({ ...linesRef.current });
     }
 
