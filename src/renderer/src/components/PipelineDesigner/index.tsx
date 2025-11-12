@@ -125,7 +125,6 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
             const { pasteNodes, pasteLines, idChanges } = getNodesPasteInfos(copyNodes, copyLines, copyNodeIds);
             setNodes({ ...nodes, ...pasteNodes });
             setLines({ ...lines, ...pasteLines });
-            console.log(pasteNodes, pasteLines, idChanges);
             showMessage('粘贴成功', 'success');
         } catch (err: any) {
             showMessage(`粘贴失败: ${err?.message ?? err}`, 'error');
@@ -137,7 +136,6 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
      * @param e 
      */
     const onConnectionEstablish = (e: ILine) => {
-        // console.log(lines);
         // @todo 传入子组件作为回调函数时：若作为 TSX DOM节点绑定事件函数触发，lines获取的值正确，否则获取的lines会是一个旧值；
         const { targetId } = e;
         const status = actions.current[targetId]?.paramDefines ? ELineStatus.defaultWithParam : ELineStatus.default;

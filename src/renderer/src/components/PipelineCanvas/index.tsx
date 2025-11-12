@@ -18,7 +18,6 @@ import {
     getChangesForJsPlumb,
     encodeNodeStatus,
     encodeLineStatus,
-    IStatus,
     generateInjectNodeStyels,
     setConnectionStatus,
     ICanvasInfos,
@@ -250,7 +249,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
             jsPlumb.current.bind(EVENT_CONNECTION, (c: Connection) => {
                 const { sourceId, targetId } = c;
                 const lineId = encodeLineId(sourceId, targetId);
-                if (lines[lineId]) return;
+                if (currentUIDatas.current.lines[lineId]) return;
                 onConnectionEstablish(currentUIDatas.current.lines[lineId] = { id: lineId, sourceId, targetId, status: ELineStatus.default });
             });
             jsPlumb.current.bind(EVENT_CONNECTION_CLICK, (c: Connection) => {
@@ -290,7 +289,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         if (!jsPlumb.current) return;
         if (JSON.stringify(lineStatusTemp.current) === JSON.stringify(lineStatus)) return;
         setConnectionStatus(lineStatus, jsPlumb.current);
-        lineStatusTemp.current = lineStatus;
+        lineStatusTemp.current = { ...lineStatus };
     }, [lineStatus])
 
     useEffect(() => {

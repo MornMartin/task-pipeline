@@ -48,7 +48,8 @@ const getChanges = function <T>(source: Record<string, T>, target: Record<string
         if (!sourceCopies[key]) {// 原数据中不存在
             news[key] = targetCopies[key];
         } else if (sourceCopies[key] && hasModified?.(sourceCopies[key], targetCopies[key])) {// 原数据中存在，且被判定为已修改
-            modifies[key] = targetCopies[key]
+            modifies[key] = targetCopies[key];
+            delete sourceCopies[key];
         } else {// 原数据中存在，且被判定为未修改
             delete sourceCopies[key];
         }
@@ -456,6 +457,7 @@ export const getLineStatus = (isInvalid: boolean, isParametric: boolean, isActiv
  * @returns 
  */
 export const encodeLineStatus = (actives: INodeConfig[] = [], lines: Record<string, ILine>) => {
+    console.log(actives, lines)
     const temp: Record<string, ELineStatus> = {};
     const activeLines: Record<string, boolean> = {};
     for (const item of actives) {
