@@ -369,7 +369,7 @@ export interface IPropertyCollapse extends IPropertyBase {
     type: ECtrlType.Collapse,
     children: TPropertyDefine[],
     params?: {
-
+        switch?: TPropertyParam<{ isShow: boolean, key: string, default: TPropertyParam<boolean> }>;// 是否展示控件开关
     }
 }
 export const describeCollapse: IPropertyDefineData = {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, WheelEventHandler } from 'react'
-import { newInstance, BrowserJsPlumbInstance, EVENT_CONNECTION_CLICK, Connection, EVENT_CONNECTION, INTERCEPT_BEFORE_DROP, BeforeDropParams } from "@jsplumb/browser-ui"
+import { newInstance, BrowserJsPlumbInstance, EVENT_CONNECTION_CLICK, Connection, EVENT_CONNECTION, INTERCEPT_BEFORE_DROP, BeforeDropParams, EVENT_DRAG_STOP } from "@jsplumb/browser-ui"
 import style from './index.module.less'
 import { debounce } from '@renderer/utils/methods';
 import {
@@ -7,7 +7,6 @@ import {
     createNodeUI,
     maxScale,
     minScale,
-    defaultScale,
     registerConnectorTypes,
     registerNodeEndpoint,
     registerEventEndpoint,
@@ -21,13 +20,17 @@ import {
     encodeLineStatus,
     IStatus,
     generateInjectNodeStyels,
-    setConnectionStatus
+    setConnectionStatus,
+    ICanvasInfos,
+    resetLines
 } from './declare';
-import { INode, INodeConfig, ILine, ENodeConfigType, encodeLineId, ELineStatus } from '@renderer/utils/pipelineDeclares';
+import { INode, INodeConfig, ILine, ENodeConfigType, encodeLineId, ELineStatus, ENodeStatus } from '@renderer/utils/pipelineDeclares';
 import Slider from '../SliderInput';
 import { CtrlKey } from '@renderer/utils/hotkeys';
 
-const initDebounce = debounce();
+const initJsPlumbDebounce = debounce();
+
+const initScrollDebounce = debounce();
 
 const emitUIChangesDebounce = debounce(10);
 
@@ -35,8 +38,12 @@ interface IProps {
     nodes: Record<string, INode>;
     lines: Record<string, ILine>;
     active: INodeConfig[];
+    configs: ICanvasInfos;
     onActiveChange: (e: INodeConfig[]) => void;
     onConnectionEstablish: (e: ILine) => void;
+    onNodeStyleChange: (e: INode) => void;
+    onScrollChange: (e: ICanvasInfos['scroll']) => void;
+    onScaleChange: (e: ICanvasInfos['scale']) => void;
 }
 
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
@@ -44,12 +51,17 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         nodes = {},
         lines = {},
         active,
+        configs,
         onActiveChange,
         onConnectionEstablish,
+        onNodeStyleChange,
+        onScrollChange,
+        onScaleChange,
     } = props;
-    const [scale, setScale] = useState(defaultScale);
+    const [scale, setScale] = useState(configs.scale);
     const canvasDragStartPos = useRef<{ x: number, y: number }>(null);
     const canvasContainer = useRef<HTMLDivElement>(null);
+    const canvasScrollInitStatus = useRef<boolean>(false);
     const jsPlumbContainer = useRef<HTMLDivElement>(null);
     const jsPlumb = useRef<BrowserJsPlumbInstance>(null);
 
@@ -62,8 +74,9 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     }, [cacheNodes, nodes])
 
     const activeRef = useRef<INodeConfig[]>(active);
-    const nodeStatus = useMemo<Record<string, IStatus>>(() => encodeNodeStatus(active), [active]);
-    const lineStatus = useMemo<Record<string, IStatus>>(() => encodeLineStatus(active), [active]);
+    const nodeStatus = useMemo<Record<string, ENodeStatus>>(() => encodeNodeStatus(active, nodes), [active, nodes]);
+    const lineStatusTemp = useRef<Record<string, ELineStatus>>({});
+    const lineStatus = useMemo<Record<string, ELineStatus>>(() => encodeLineStatus(active, lines), [active, lines]);
 
     /**
      * 监听鼠标按下
@@ -148,7 +161,22 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         }
     }
 
+    /**
+     * 视口滚动时
+     * @param e 
+     */
+    const onCanvasWrapScroll = (e) => {
+        onScrollChange({ left: e.target.scrollLeft, top: e.target.scrollTop })
+    }
+
+    /**
+     * 设置节点滚动到视口
+     * @param node 
+     * @returns 
+     */
     const setNodeIntoView = (node: INode) => {
+        // 画布视口未初始化时，禁止触发其他滚动
+        if (!canvasScrollInitStatus.current) return;
         const el = document.getElementById(node.id);
         if (!el) return console.error(`Node ${node.id} is not existed.`);
         el.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'center' });
@@ -156,7 +184,23 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
 
     const emitUIChanges = (current: { nodes: Record<string, INode>, lines: Record<string, ILine> }, target: { nodes: Record<string, INode>, lines: Record<string, ILine> }) => {
         if (!jsPlumb.current) return;
-        const { deletedLines, deletedOutPins, deletedActions, deletedEvents, deletedNodes, adddedNodes, adddedEvents, adddedActions, adddedOutPins, adddedLines } = getChangesForJsPlumb(current, target);
+        const {
+            deletedLines,
+            deletedOutPins,
+            deletedActions,
+            deletedEvents,
+            deletedNodes,
+            modifiedNodes,
+            modifiedEvents,
+            modifiedActions,
+            modifiedOutPins,
+            modifiedLines,
+            adddedNodes,
+            adddedEvents,
+            adddedActions,
+            adddedOutPins,
+            adddedLines,
+        } = getChangesForJsPlumb(current, target);
         jsPlumb.current.batch(() => {
             disconnectLines(jsPlumb.current as BrowserJsPlumbInstance, Object.keys(deletedLines));
             Object.keys(deletedOutPins).forEach(id => {
@@ -168,6 +212,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
             Object.keys(deletedEvents).forEach(id => {
                 unregisterEndpoint(jsPlumb.current as BrowserJsPlumbInstance, id);
             });
+            resetLines(jsPlumb.current as BrowserJsPlumbInstance, modifiedLines);
             Object.keys(deletedNodes).forEach(id => {
                 unregisterEndpoint(jsPlumb.current as BrowserJsPlumbInstance, id);
             });
@@ -183,22 +228,20 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
             Object.keys(adddedOutPins).forEach(id => {
                 registerOutPinEndpoint(jsPlumb.current as BrowserJsPlumbInstance, id);
             });
-            reconnectLines(jsPlumb.current as BrowserJsPlumbInstance, Object.keys(adddedLines));
+            reconnectLines(jsPlumb.current as BrowserJsPlumbInstance, adddedLines);
         });
         setCacheNodes({ ...target.nodes });
         currentUIDatas.current = { ...target };
     }
 
     useEffect(() => {
-        initDebounce(() => {
+        initJsPlumbDebounce(() => {
             if (!jsPlumbContainer.current) return;
             jsPlumb.current = newInstance(createJsPlumbDefaults(jsPlumbContainer.current));
             jsPlumb.current.setZoom(scale);
             jsPlumb.current.batch(() => {
                 registerConnectorTypes(jsPlumb.current as BrowserJsPlumbInstance);
             });
-            const [defaultNodeKey] = Object.keys(displayNodes);
-            setNodeIntoView(displayNodes[defaultNodeKey]);
             emitUIChangesDebounce(() => emitUIChanges(currentUIDatas.current, targetUIDatas.current));
             jsPlumb.current.bind(INTERCEPT_BEFORE_DROP, (e: BeforeDropParams) => {
                 // const { sourceId, targetId } = e;
@@ -214,8 +257,23 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 //连线点击
                 onLineClick(c);
             });
+            jsPlumb.current.bind(EVENT_DRAG_STOP, e => {
+                for (const item of e.elements) {
+                    const nodeId = item.id;
+                    const node = nodes[nodeId];
+                    onNodeStyleChange(currentUIDatas.current.nodes[nodeId] = { ...node, styleInfo: { ...node.styleInfo, left: item.pos.x, top: item.pos.y } });
+                }
+            })
         })
     }, [jsPlumbContainer]);
+
+    useEffect(() => {
+        initScrollDebounce(() => {// 利用防抖使滚动初始化在scale初始化之后
+            if (!canvasContainer.current) return;
+            canvasContainer.current.scrollTo(configs.scroll);
+            canvasScrollInitStatus.current = true;
+        })
+    }, [canvasContainer])
 
     useEffect(() => {
         activeRef.current = active;
@@ -224,12 +282,15 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     useEffect(() => {
         jsPlumb?.current?.setZoom(scale);
         const [defaultNodeKey] = Object.keys(displayNodes);
+        onScaleChange(scale);
         setNodeIntoView(displayNodes[defaultNodeKey]);
     }, [scale]);
 
     useEffect(() => {
         if (!jsPlumb.current) return;
+        if (JSON.stringify(lineStatusTemp.current) === JSON.stringify(lineStatus)) return;
         setConnectionStatus(lineStatus, jsPlumb.current);
+        lineStatusTemp.current = lineStatus;
     }, [lineStatus])
 
     useEffect(() => {
@@ -240,7 +301,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     return <>
         <div className={style.PipelineCanvas} style={{ ['--canvasWidth']: '20000px', '--canvasHeight': '20000px' } as any}>
             <style>{generateInjectNodeStyels(nodeStatus)}</style>
-            <div className={style.canvasWrap} ref={canvasContainer} onWheel={onCanvasWheel} onMouseDown={onCanvasClick}>
+            <div className={style.canvasWrap} ref={canvasContainer} onWheel={onCanvasWheel} onMouseDown={onCanvasClick} onScroll={onCanvasWrapScroll}>
                 <div
                     className={style.canvas}
                     ref={jsPlumbContainer}

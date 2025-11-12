@@ -1,37 +1,37 @@
 import { IRenderPropertyDefine, TPropertyDefine } from './declare'
 import style from './index.module.less'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { analysePropertyDefine, createWriteBackValues, decodePropertyDefineJson } from './methods';
 import { toRender } from './Ctrls/renderer';
 
 interface IProps {
-    propertyDefines: string;
+    defines: string;
     values: Record<string, any>;
+    onChange: (values: Record<string, any>, source: { ctrl: TPropertyDefine, path: TPropertyDefine[], value: any }) => void;
 }
 
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
-    const { propertyDefines } = props;
-    const propertyDefinesTemp = useRef<string>('');
-    const valuesTemp = useRef<Record<string, any>>({});
-    const [values, setValues] = useState<Record<string, any>>({});
+    const { defines, values } = props;
+    const definesTemp = useRef<string>('');
+    const valuesTemp = useRef<Record<string, any>>(values);
     const [ctrlList, setCtrlList] = useState<IRenderPropertyDefine[]>([]);
 
     const onChange = (e: any, path: TPropertyDefine[]) => {
-        setValues(createWriteBackValues(path, e, valuesTemp.current, (path, ctrl) => {
-            return 0;
-        }));
+        const values = createWriteBackValues(path, e, valuesTemp.current);
+        props.onChange(JSON.parse(JSON.stringify(values)), { path, value: e, ctrl: path[path.length - 1] })
     }
 
     useEffect(() => {
-        if (propertyDefinesTemp.current === propertyDefines) return;
-        const { defaults, decoratedCtrls } = analysePropertyDefine(decodePropertyDefineJson(propertyDefines));
-        setValues(defaults);
+        if (definesTemp.current === defines) return;
+        const { decoratedCtrls } = analysePropertyDefine(decodePropertyDefineJson(defines));
         setCtrlList(decoratedCtrls);
-        propertyDefinesTemp.current = propertyDefines;
-    }, [propertyDefines]);
+        definesTemp.current = defines;
+    }, [defines]);
+
     useEffect(() => {
-        valuesTemp.current = { ...values };
+        valuesTemp.current = values;
     }, [values])
+
     return <>
         <div className={style.PropertyEditor}>
             {

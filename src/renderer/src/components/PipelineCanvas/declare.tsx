@@ -1,17 +1,12 @@
 import { ReactElement } from 'react';
 import style from './index.module.less';
-import { decodeLineId, EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
+import { decodeLineId, EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, ENodeStatus, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
 import { BezierConnector, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor, Connection } from '@jsplumb/browser-ui';
 
 /**
  * jsPlumb注册端点类型
  */
 export type TJsPlumbEndpoint = EEndpoint | 'node';
-
-/**
- * 默认画布缩放
- */
-export const defaultScale = 1;
 
 /**
  * 最小画布缩放
@@ -24,13 +19,18 @@ export const minScale = 0.01;
 export const maxScale = 2;
 
 /**
- * 连线/节点的状态
+ * 画布信息定义
  */
-export interface IStatus {
-    isActive?: boolean;
-    isInvalid?: boolean;
-    isParametric?: boolean;
+export interface ICanvasInfos {
+    scale: number;
+    scroll: { left: number, top: number }
 }
+
+/** 
+ * 默认画布缩放/滚动
+*/
+
+export const defaultCanvasInfos: ICanvasInfos = { scale: 1, scroll: { left: 10000, top: 10000 } }
 
 /**
  * 获取变化
@@ -68,7 +68,7 @@ export const getChangesForJsPlumb = (source: { nodes: Record<string, INode>, lin
     const { nodes: targetNodes, lines: targetLines } = target;
     const { events: targetEvents, actions: targetActions, outPins: targetOutPins } = traverseNodesEndpoints(targetNodes);
     const { deletes: deletedNodes, news: adddedNodes, modifies: modifiedNodes } = getChanges<INode>(sourceNodes, targetNodes);
-    const { deletes: deletedLines, news: adddedLines, modifies: modifiedLines } = getChanges<ILine>(sourceLines, targetLines);
+    const { deletes: deletedLines, news: adddedLines, modifies: modifiedLines } = getChanges<ILine>(sourceLines, targetLines, (source, target) => source.status !== target.status);
     const { deletes: deletedEvents, news: adddedEvents, modifies: modifiedEvents } = getChanges<IEvent>(sourceEvents, targetEvents);
     const { deletes: deletedActions, news: adddedActions, modifies: modifiedActions } = getChanges<IAction>(sourceActions, targetActions);
     const { deletes: deletedOutPins, news: adddedOutPins, modifies: modifiedOutPins } = getChanges<IOutPin>(sourceOutPins, targetOutPins);
@@ -352,15 +352,29 @@ export const disconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string
     }
 }
 
+export const resetLines = (jsPlumb: BrowserJsPlumbInstance, lines: Record<string, ILine>) => {
+    const connections = jsPlumb.getConnections() as Array<Connection>;// 当前版本查询连线得通过端点DOM，极不合理
+    for (const item of connections) {
+        const lineId = encodeLineId(item.sourceId, item.targetId);
+        if (lines[lineId]) {
+            item.setType(lines[lineId].status);
+            delete lines[lineId];
+            if (!Object.keys(lines).length) {
+                return;
+            }
+        }
+    }
+}
+
 /**
  * 添加连线
  * @param jsPlumb 
  * @param lineIds 
  */
-export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string[]) => {
+export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lines: Record<string, ILine>) => {
     jsPlumb.batch(() => {
-        for (const lineId of lineIds) {
-            const { sourceId, targetId } = decodeLineId(lineId);
+        for (const lineId in lines) {
+            const { sourceId, targetId, status } = lines[lineId];
             jsPlumb.connect({
                 source: document.getElementById(sourceId) as Element,
                 target: document.getElementById(targetId) as Element,
@@ -370,9 +384,25 @@ export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string[
                 endpointStyle: baseEndpointOptions.paintStyle,
                 cssClass: baseEndpointOptions.connectorClass,
                 hoverClass: baseEndpointOptions.connectorHoverClass,
+                type: status,
             })
         }
     })
+}
+
+
+/**
+ * 计算连线状态
+ */
+export const getNodeStatus = (isInvalid: boolean, isActive: boolean): ENodeStatus => {
+    if (isInvalid) {// 无效
+        return ENodeStatus.error;
+    }
+    if (isActive) {// 激活
+        return ENodeStatus.active
+    }
+    // 未激活
+    return ENodeStatus.normal
 }
 
 /**
@@ -380,14 +410,44 @@ export const reconnectLines = (jsPlumb: BrowserJsPlumbInstance, lineIds: string[
  * @param actives 
  * @returns 
  */
-export const encodeNodeStatus = (actives: INodeConfig[] = []) => {
-    const temp: Record<string, IStatus> = {};
+export const encodeNodeStatus = (actives: INodeConfig[] = [], nodes: Record<string, INode>) => {
+    const temp: Record<string, ENodeStatus> = {};
+    const activeNodes: Record<string, boolean> = {};
     for (const item of actives) {
         if (item.type === ENodeConfigType.eventNode) {
-            temp[item.payload.id] = { isActive: true };
+            activeNodes[item.payload.id] = true;
         }
     }
+    for (const nodeId in nodes) {
+        const { status } = nodes[nodeId];
+        const isInvalid = [ENodeStatus.error].includes(status);
+        const isActive = activeNodes[nodeId];
+        temp[nodeId] = getNodeStatus(isInvalid, isActive);
+    }
     return temp;
+}
+
+/**
+ * 计算连线状态
+ */
+export const getLineStatus = (isInvalid: boolean, isParametric: boolean, isActive: boolean): ELineStatus => {
+    if (isInvalid && isParametric) {// 无效，有参数
+        return ELineStatus.invalidWithParam
+    }
+    if (isInvalid && !isParametric) {// 无效，无参数
+        return ELineStatus.invalid
+    }
+    if (isActive && isParametric) {// 激活，有参数
+        return ELineStatus.activeWithParam
+    }
+    if (isActive && !isParametric) {// 激活，无参数
+        return ELineStatus.active
+    }
+    if (isParametric) {// 未激活，有参数
+        return ELineStatus.defaultWithParam
+    }
+    // 未激活，无参数
+    return ELineStatus.default
 }
 
 /**
@@ -395,12 +455,20 @@ export const encodeNodeStatus = (actives: INodeConfig[] = []) => {
  * @param actives 
  * @returns 
  */
-export const encodeLineStatus = (actives: INodeConfig[] = []) => {
-    const temp: Record<string, IStatus> = {};
+export const encodeLineStatus = (actives: INodeConfig[] = [], lines: Record<string, ILine>) => {
+    const temp: Record<string, ELineStatus> = {};
+    const activeLines: Record<string, boolean> = {};
     for (const item of actives) {
         if (item.type === ENodeConfigType.eventLine) {
-            temp[item.payload.id] = { isActive: true };
+            activeLines[item.payload.id] = true;
         }
+    }
+    for (const lineId in lines) {
+        const { status } = lines[lineId];
+        const isInvalid = [ELineStatus.invalid, ELineStatus.invalidWithParam].includes(status);
+        const isParametric = [ELineStatus.activeWithParam, ELineStatus.defaultWithParam, ELineStatus.invalidWithParam].includes(status);
+        const isActive = activeLines[lineId];
+        temp[lineId] = getLineStatus(isInvalid, isParametric, isActive);
     }
     return temp;
 }
@@ -410,11 +478,12 @@ export const encodeLineStatus = (actives: INodeConfig[] = []) => {
  * @param nodeStatus 
  * @returns 
  */
-export const generateInjectNodeStyels = (nodeStatus: Record<string, IStatus>): string => {
+export const generateInjectNodeStyels = (nodeStatus: Record<string, ENodeStatus>): string => {
     let temp = '';
     for (const nodeId in nodeStatus) {
-        const { isActive, isInvalid } = nodeStatus[nodeId];
-        if (!(isActive || isInvalid)) continue;
+        const status = nodeStatus[nodeId];
+        if (status === ENodeStatus.normal) continue;
+        const isInvalid = status === ENodeStatus.error;
         temp += `
         .${style.node}[id="${nodeId}"] {
             border-color: ${isInvalid ? '#ff8c8e' : '#7c9ebf'};
@@ -432,34 +501,12 @@ export const generateInjectNodeStyels = (nodeStatus: Record<string, IStatus>): s
  * @param lineStatus 
  * @param jsPlumb 
  */
-export const setConnectionStatus = (lineStatus: Record<string, IStatus>, jsPlumb: BrowserJsPlumbInstance) => {
+export const setConnectionStatus = (lineStatus: Record<string, ELineStatus>, jsPlumb: BrowserJsPlumbInstance) => {
     jsPlumb.batch(() => {
         const connections = jsPlumb.getConnections() as Connection[] || [];
         for (const connection of connections) {
             const lineId = encodeLineId(connection.sourceId, connection.targetId);
-            const { isActive, isInvalid, isParametric } = lineStatus[lineId] || {};
-            if (isInvalid && isParametric) {// 无效，有参数
-                connection.setType(ELineStatus.invalidWithParam);
-                continue;
-            }
-            if (isInvalid && !isParametric) {// 无效，无参数
-                connection.setType(ELineStatus.invalid);
-                continue;
-            }
-            if (isActive && isParametric) {// 激活，有参数
-                connection.setType(ELineStatus.activeWithParam);
-                continue;
-            }
-            if (isActive && !isParametric) {// 激活，无参数
-                connection.setType(ELineStatus.active);
-                continue;
-            }
-            if (isParametric) {// 未激活，有参数
-                connection.setType(ELineStatus.defaultWithParam);
-                continue;
-            }
-            // 未激活，无参数
-            connection.setType(ELineStatus.default);
+            connection.setType(lineStatus[lineId] ?? ELineStatus.default);
         }
     })
 

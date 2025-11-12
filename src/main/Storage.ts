@@ -67,6 +67,9 @@ const createPipelineTableFields = (): Record<string, ITableField> => {
         variables: {
             dataType: 'TEXT',
         },
+        canvasInfos: {
+            dataType: 'TEXT',
+        },
     }
 }
 /**
@@ -232,10 +235,10 @@ export default class Storage {
      * @param params 
      * @returns 
      */
-    public updatePipelineCanvasInfo(id: string, params: { nodes: string, lines: string, variables: string }) {
+    public updatePipelineCanvasInfo(id: string, params: { nodes: string, lines: string, variables: string, canvasInfos: string }) {
         try {
-            const { nodes = '', lines = '', variables = '' } = params || {};
-            const { changes } = this.db.prepare('UPDATE PIPELINES SET updated_at = CURRENT_TIMESTAMP, nodes = @nodes, lines = @lines, variables = @variables WHERE id = @id').run({ id, nodes, lines, variables });
+            const { nodes = '', lines = '', variables = '', canvasInfos = '' } = params || {};
+            const { changes } = this.db.prepare('UPDATE PIPELINES SET updated_at = CURRENT_TIMESTAMP, nodes = @nodes, lines = @lines, variables = @variables, canvasInfos=@canvasInfos WHERE id = @id').run({ id, nodes, lines, variables, canvasInfos });
             if (!changes) {
                 return Promise.reject(`Pipeline ${id} is not existed.`)
             }

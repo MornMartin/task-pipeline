@@ -50,7 +50,7 @@ export const getPipelines = (name: string, pageSize: number, current: number, so
  * @param params 
  * @returns 
  */
-export const updatePipelineCanvasInfo = (id: string, params: { nodes: string, lines: string, variables: string }) => {
+export const updatePipelineCanvasInfo = (id: string, params: { nodes: string, lines: string, variables: string, canvasInfos: string }) => {
     return callStorage('updatePipelineCanvasInfo', id, params);
 }
 

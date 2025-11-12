@@ -1,4 +1,6 @@
+import { TPropertyDefine } from "@renderer/components/PropertyEditor/declare";
 import { createUUID } from "./methods";
+import { createMockPropertyDefine } from "@renderer/components/PropertyEditor/methods";
 
 /**
  * 端点ID分隔符
@@ -11,13 +13,6 @@ export const endpointIdSeparator = '@';
 export const lineIdSeparator = '&';
 
 /**
- * 动作/动作输出/事件参数定义
- */
-interface IParamDefine {
-    key: string;
-}
-
-/**
  * 定义端点类型
  */
 export const enum EEndpoint {
@@ -27,13 +22,21 @@ export const enum EEndpoint {
 }
 
 /**
+ * 事件参数定义
+ */
+export interface IEventParamDefine {
+    key: string;
+    label: string;
+    tip?: string;
+}
+
+/**
  * 端点定义基类
  */
 interface IEndpoint {
     id: string;
     name: string;
     type: EEndpoint;
-    paramDefines?: IParamDefine[];
 }
 
 /**
@@ -42,6 +45,7 @@ interface IEndpoint {
 export interface IAction extends IEndpoint {
     type: EEndpoint.action,
     outPins?: IOutPin[];
+    paramDefines?: TPropertyDefine[];
 }
 
 /**
@@ -49,6 +53,7 @@ export interface IAction extends IEndpoint {
  */
 export interface IEvent extends IEndpoint {
     type: EEndpoint.event,
+    paramDefines?: IEventParamDefine[];
 }
 
 
@@ -57,6 +62,7 @@ export interface IEvent extends IEndpoint {
  */
 export interface IOutPin extends IEndpoint {
     type: EEndpoint.outPin,
+    paramDefines?: IEventParamDefine[];
 }
 
 /**
@@ -75,6 +81,7 @@ export const enum ENodeStatus {
     warning,
     success,
     error,
+    active,
 }
 
 /**
@@ -99,6 +106,8 @@ export interface INode {
     status: ENodeStatus;
     events: IEvent[];
     actions: IAction[];
+    params?: Record<string, any>;
+    paramDefines?: TPropertyDefine[];
     styleInfo: { left: number, top: number };
 }
 
@@ -185,43 +194,48 @@ export const mockNodes = (length: number = 10): Record<string, INode> => {
     const temp = {};
     for (let i = 0; i < length; i++) {
         const id = createNodeId();
-        const node: INode = {
-            id,
-            name: `mock-node-${i || ""}`,
-            type: ENodeType.test,
-            status: ENodeStatus.normal,
-            styleInfo: { left: 10000 + i * 75, top: 10000 + (i % 5) * 50 },
-            events: [
-                { id: encodeEndpointId(id, 'event'), type: EEndpoint.event, name: 'Event 1', paramDefines: [] },
-                { id: encodeEndpointId(id, 'event2'), type: EEndpoint.event, name: 'Event 2', paramDefines: [] },
-            ],
-            actions: [
-                {
-                    id: encodeEndpointId(id, 'action'),
-                    name: 'Action 1',
-                    type: EEndpoint.action,
-                    paramDefines: [],
-                    outPins: [
-                        { id: encodeEndpointId(id, 'action', 'outPin1'), type: EEndpoint.outPin, name: 'OutPin1 1', paramDefines: [] },
-                        { id: encodeEndpointId(id, 'action', 'outPin2'), type: EEndpoint.outPin, name: 'OutPin2 1', paramDefines: [] }
-                    ]
-                },
-                {
-                    id: encodeEndpointId(id, 'action2'),
-                    name: 'Action 2',
-                    type: EEndpoint.action,
-                    paramDefines: [],
-                    outPins: [
-                        { id: encodeEndpointId(id, 'action2', 'outPin1'), type: EEndpoint.outPin, name: 'OutPin1 1', paramDefines: [] },
-                        { id: encodeEndpointId(id, 'action2', 'outPin2'), type: EEndpoint.outPin, name: 'OutPin2 1', paramDefines: [] }
-                    ]
-                },
-            ],
-        }
+        const node: INode = createMockNode(id, `mock-node-${i}`, { left: 10000 + (i % 5) * 250, top: 10000 + i * 50 })
         temp[id] = node;
     }
     return temp;
 }
+
+export const createMockNode = (id: string, name = 'mock-node', position?: { left: number, top: number }): INode => {
+    return {
+        id,
+        name,
+        type: ENodeType.test,
+        status: ENodeStatus.normal,
+        styleInfo: { left: position?.left || 0, top: position?.top || 0 },
+        paramDefines: createMockPropertyDefine(),
+        events: [
+            { id: encodeEndpointId(id, 'event'), type: EEndpoint.event, name: 'Event 1', paramDefines: [] },
+            { id: encodeEndpointId(id, 'event2'), type: EEndpoint.event, name: 'Event 2', paramDefines: [] },
+        ],
+        actions: [
+            {
+                id: encodeEndpointId(id, 'action'),
+                name: 'Action With Param',
+                type: EEndpoint.action,
+                paramDefines: createMockPropertyDefine(),
+                outPins: [
+                    { id: encodeEndpointId(id, 'action', 'outPin1'), type: EEndpoint.outPin, name: 'OutPin1 1', paramDefines: [] },
+                    { id: encodeEndpointId(id, 'action', 'outPin2'), type: EEndpoint.outPin, name: 'OutPin2 1', paramDefines: [] }
+                ]
+            },
+            {
+                id: encodeEndpointId(id, 'action2'),
+                name: 'Action Without Param',
+                type: EEndpoint.action,
+                outPins: [
+                    { id: encodeEndpointId(id, 'action2', 'outPin1'), type: EEndpoint.outPin, name: 'OutPin1 1', paramDefines: [] },
+                    { id: encodeEndpointId(id, 'action2', 'outPin2'), type: EEndpoint.outPin, name: 'OutPin2 1', paramDefines: [] }
+                ]
+            },
+        ],
+    } as INode;
+}
+
 
 export const traverseNodesEndpoints = (nodes: Record<string, INode>) => {
     const eventsTemp: Record<string, IEvent> = {};
