@@ -12,6 +12,8 @@ import { updatePipelineCanvasInfo } from '@renderer/api';
 import { defaultCanvasInfos, ICanvasInfos } from '../PipelineCanvas/declare';
 import { IRenderPropertyDefine, TPropertyDefine } from '../PropertyEditor/declare';
 
+const mockNodeList = mockNodes(2);
+
 interface IProps { }
 
 const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element => {
@@ -21,7 +23,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
 
-    const nodesRef = useRef<Record<string, INode>>(detail.nodes ? JSON.parse(detail.nodes) : mockNodes(10));
+    const nodesRef = useRef<Record<string, INode>>(detail.nodes ? JSON.parse(detail.nodes) : mockNodeList);
     const [nodes, setNodes] = useState<Record<string, INode>>(nodesRef.current);
     const linesRef = useRef<Record<string, ILine>>(detail.lines ? JSON.parse(detail.lines) : {});
     const [lines, setLines] = useState<Record<string, ILine>>(linesRef.current);

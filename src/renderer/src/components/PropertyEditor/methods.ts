@@ -10,21 +10,24 @@ import tryRunPropertyGetter from "./tryRunPropertyGetter";
  * @param isMergeArray 
  * @returns 
  */
-export const mergeWriteBackValues = (base: any, increments: any) => {
+export const mergeWriteBackValues = (base: any, increments: any, isMergeArray = true) => {
     if (isNull(base)) {// 源数据为空时
         return increments;
     }
-    if (Array.isArray(base) && Array.isArray(increments)) {// 合并数组
+    if (Array.isArray(base) && Array.isArray(increments) && isMergeArray) {// 合并数组
         const temp = [...base];
         for (let i = 0, item; item = increments[i]; i++) {
-            temp[i] = mergeWriteBackValues(temp[i], item);
+            temp[i] = mergeWriteBackValues(temp[i], item, isMergeArray);
         }
         return temp;
+    }
+    if (Array.isArray(base) && Array.isArray(increments) && !isMergeArray) {// 不合并数组
+        return increments;
     }
     if (typeof base === 'object' && typeof increments === 'object') {// 合并对象
         const temp = { ...base };
         for (const key in increments) {
-            temp[key] = mergeWriteBackValues(temp[key], increments[key]);
+            temp[key] = mergeWriteBackValues(temp[key], increments[key], isMergeArray);
         }
         return temp;
     }
@@ -40,30 +43,19 @@ export const mergeWriteBackValues = (base: any, increments: any) => {
  * @param root 
  * @returns 
  */
-export const createWriteBackValues = (path: TPropertyDefine[], value: any, root: Record<string, any> = {}, getArrayCtrlIndex?: (path: TPropertyDefine[], ctrl: TPropertyDefine) => number) => {
+export const createWriteBackObjectValues = (path: TPropertyDefine[], value: any, root: Record<string, any> = {}) => {
     const toWriteBack = (parent: any, restPath: TPropertyDefine[], throughPath: TPropertyDefine[], value: any) => {
         const nexts = restPath.slice(1);
         const current = restPath[0];
         const next = nexts[0];
         if (!current) return parent;
-        const { key, type } = current;
-        const isArrayParent = Array.isArray(parent);// 上层结构是否为数组
-        const wrap = arrayContainerCtrls.includes(type) ? [] : {};
-        if (!isArrayParent && !next) {// 写入对象字段值
-            return { ...parent, [key]: objectContainerCtrls.concat(arrayContainerCtrls).includes(type) && wrap || value };
-        } else if (!isArrayParent && next) {// 写入对象字段结构
-            return { ...parent, [key]: toWriteBack(wrap, nexts, [...throughPath, current], value) };
-        } else if (isArrayParent && !next && typeof getArrayCtrlIndex == 'function') {// 写入数组值
-            const currentIndex = getArrayCtrlIndex(throughPath, current);
-            return parent.slice(0, currentIndex).concat(isEmpty(value) ? [] : [value]).concat(parent.slice(currentIndex + 1));
-        } else if (isArrayParent && next && typeof getArrayCtrlIndex == 'function') {// 写入数组对象结构
-            const currentIndex = getArrayCtrlIndex(throughPath, current);
-            return parent.slice(0, currentIndex).concat([toWriteBack(wrap, nexts, [...throughPath, current], value)]).concat(parent.slice(currentIndex + 1));
-        } else {
-            return parent;
+        const { key } = current;
+        if (!next) {
+            return { ...parent, [key]: value };
         }
+        return { ...parent, [key]: toWriteBack({}, nexts, [...throughPath, current], value) };
     }
-    return mergeWriteBackValues(root, toWriteBack(root, path, [], value));
+    return mergeWriteBackValues(root, toWriteBack(root, path, [], value), false);
 }
 
 /**
@@ -127,7 +119,7 @@ export const analysePropertyDefine = (ctrls?: TPropertyDefine[]) => {
     let defaults: Record<string, any> = {};
     const decoratedCtrls: IRenderPropertyDefine[] = toDecorate(ctrls, [], ({ id, ctrl, parents, path }) => {
         const ctrlDefaultValue = tryRunPropertyGetter(ctrl.params?.['default'], ctrl);
-        defaults = mergeWriteBackValues(defaults, createWriteBackValues(path, ctrlDefaultValue, defaults, () => 0));
+        defaults = mergeWriteBackValues(defaults, createWriteBackObjectValues(path, ctrlDefaultValue, defaults));
     });
     return { decoratedCtrls, defaults };
 }
@@ -186,53 +178,64 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
             type: ECtrlType.Collapse,
             children: [
                 {
-                    key: 'obj.input',
-                    label: 'obj.input',
-                    type: ECtrlType.Input,
+                    key: 'obj.checkbox',
+                    label: 'obj.checkbox',
+                    type: ECtrlType.Checkbox,
                     params: {
-                        default: () => 'List Object Property'
-                    }
-                },
-                {
-                    key: 'obj.input2',
-                    label: 'obj.input2',
-                    type: ECtrlType.Input,
-                    params: {
-                        default: () => 'List Object Property'
-                    }
-                },
-                {
-                    key: 'obj.textare',
-                    label: 'obj.textare',
-                    type: ECtrlType.TextArea,
-                    params: {
-                        default: () => 'List Object Property'
-                    }
-                },
-                {
-                    key: 'obj.obj',
-                    label: 'obj.obj',
-                    type: ECtrlType.Collapse,
-                    children: [
-                        {
-                            key: 'obj.obj.input',
-                            label: 'obj.obj.input',
-                            type: ECtrlType.Input,
-                            params: {
-                                default: () => 'List Object Property'
-                            }
+                        default: () => [],
+                        options: (propertyDefine, propertyValues, injects) => {
+                            return [
+                                { label: 1, value: 1 },
+                                { label: 2, value: 2 },
+                                { label: 3, value: 3 },
+                            ]
                         },
-                        {
-                            key: 'input3',
-                            label: 'input3',
-                            isElevated: true,
-                            type: ECtrlType.Input,
-                            params: {
-                                default: () => 'List Object Property'
-                            }
-                        },
-                    ]
+                        disabled: (propertyDefine, propertyValues, injects) => {
+                            console.log(propertyValues, injects, propertyValues?.obj?.['obj.checkbox']?.length)
+                            return !!propertyValues?.obj?.['obj.checkbox']?.length;
+                        }
+                    }
                 },
+                // {
+                //     key: 'obj.input2',
+                //     label: 'obj.input2',
+                //     type: ECtrlType.Input,
+                //     params: {
+                //         default: () => 'List Object Property'
+                //     }
+                // },
+                // {
+                //     key: 'obj.textare',
+                //     label: 'obj.textare',
+                //     type: ECtrlType.TextArea,
+                //     params: {
+                //         default: () => 'List Object Property'
+                //     }
+                // },
+                // {
+                //     key: 'obj.obj',
+                //     label: 'obj.obj',
+                //     type: ECtrlType.Collapse,
+                //     children: [
+                //         {
+                //             key: 'obj.obj.input',
+                //             label: 'obj.obj.input',
+                //             type: ECtrlType.Input,
+                //             params: {
+                //                 default: () => 'List Object Property'
+                //             }
+                //         },
+                //         {
+                //             key: 'input3',
+                //             label: 'input3',
+                //             isElevated: true,
+                //             type: ECtrlType.Input,
+                //             params: {
+                //                 default: () => 'List Object Property'
+                //             }
+                //         },
+                //     ]
+                // },
             ]
         },
     ]

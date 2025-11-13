@@ -1,12 +1,16 @@
 import Collapse from './Collapse/index';
+import Checkbox from './Checkbox/index';
 import Input from './Input/index';
+import InputNumber from './InputNumber/index';
 import TextArea from './TextArea/index';
 import List from './List/index';
+import Label from './Label/index';
 
-import { ECtrlType, IPropertyCollapse, IPropertyInput, IPropertyList, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
+import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
 
 import { JSX } from 'react';
 import { getPropertyValue } from '../methods';
+import { bidirectionalFilter } from '@renderer/utils/methods';
 
 type changeHandler = (v: any, path: TPropertyDefine[]) => void;
 
@@ -17,7 +21,25 @@ type changeHandler = (v: any, path: TPropertyDefine[]) => void;
  * @returns 
  */
 const toRenderUndefined = (renderDefine: IRenderPropertyDefine, ctrlDefine: any) => {
-    return <div key={renderDefine.id}>{ctrlDefine.label}：Undefined ctrl {renderDefine.ctrl.type}</div>
+    return <div key={renderDefine.id} style={{ display: 'flex', marginBottom: '8px' }}>
+        <Label>{ctrlDefine.label}</Label>
+        <div style={{ width: 'var(--ctrl-width)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Undefined {ctrlDefine?.type}</div>
+    </div>
+};
+
+/**
+ * 渲染复选框
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderCheckbox = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCheckbox, value: (string | number)[], onChange: changeHandler) => {
+    return (
+        <Checkbox key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
+        </Checkbox>
+    )
 };
 
 /**
@@ -35,6 +57,22 @@ const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropert
     )
 };
 
+
+/**
+ * 渲染数字框
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInputNumber, value: number, onChange: changeHandler) => {
+    return (
+        <InputNumber key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
+        </InputNumber>
+    )
+};
+
 /**
  * 渲染折叠面板
  * @param renderDefine 
@@ -43,9 +81,25 @@ const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropert
  * @param onChange 
  * @returns 
  */
-const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCollapse, value: Record<string, any>, onChange: changeHandler) => {
+const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCollapse, values: Record<string, any>, onChange: changeHandler) => {
+    const { result: collapseSwitch, rest } = bidirectionalFilter<IRenderPropertyDefine>(renderDefine.children || [], e => e.ctrl.type === ECtrlType.CollapseSwitch);
+    const switchRenderDefine = collapseSwitch.pop();
+    const { ctrl, path } = switchRenderDefine || {};
+    const switchValue = path ? getPropertyValue(path, values) : undefined;
+    const onSwitchChange = (e) => {
+        if (!path) return;
+        onChange(e, path);
+    }
     return (
-        <Collapse key={renderDefine.id} define={ctrlDefine}>{renderDefine.children?.map(item => toRender(item, value, onChange))}</Collapse>
+        <Collapse
+            key={renderDefine.id}
+            define={ctrlDefine}
+            switchDefine={ctrl as IPropertyCollapseSwitch}
+            switchValue={switchValue}
+            onChange={onSwitchChange}
+        >
+            {rest.map(item => toRender(item, values, onChange))}
+        </Collapse>
     )
 };
 
@@ -87,8 +141,14 @@ const toRenderList = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProperty
 export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<string, any>, onChange: changeHandler): JSX.Element => {
     const { ctrl, path } = renderDefine;
     const { type } = ctrl;
+    if (type === ECtrlType.Checkbox) {
+        return toRenderCheckbox(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
     if (type === ECtrlType.Input) {
         return toRenderInput(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.InputNumber) {
+        return toRenderInputNumber(renderDefine, ctrl, getPropertyValue(path, values), onChange);
     }
     if (type === ECtrlType.TextArea) {
         return toRenderTextArea(renderDefine, ctrl as IPropertyTextArea, getPropertyValue(path, values), onChange);

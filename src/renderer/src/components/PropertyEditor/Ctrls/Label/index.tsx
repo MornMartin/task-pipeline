@@ -3,11 +3,14 @@ import style from './index.module.less'
 import { useState } from 'react'
 
 interface IProps {
-    label: string
+    label?: string
 }
 
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
-    return <div className={style.Label}><Tooltip title={props.label}>{props.label}</Tooltip></div>
+    const { label, children } = props;
+    return <div className={style.Label}>
+        <Tooltip title={label} destroyOnHidden>{label ?? children}</Tooltip>
+    </div>
 }
 
 export default Component;

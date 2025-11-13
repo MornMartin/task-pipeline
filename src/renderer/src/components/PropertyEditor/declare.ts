@@ -14,6 +14,7 @@ export const enum ECtrlType {
     Radio = 'Radio',
     Slider = 'Slider',
     Switch = 'Switch',
+    CollapseSwitch = 'CollapseSwitch',
     Select = 'Select',
 
     Divider = 'Divider',
@@ -42,6 +43,7 @@ export interface IPropertyDefineField {
 export interface IPropertyDefineData {
     name: string;
     type: ECtrlType | string;
+    description?: string;
     fields: Record<string, IPropertyDefineField>;
 }
 
@@ -70,7 +72,7 @@ export type TPropertyParam<T> = T | ((propertyDefine: TPropertyDefine, propertyV
  */
 export interface IPropertyBase {
     key: string;
-    label: string;
+    label?: string;
     tip?: string;
     type: ECtrlType;
     isElevated?: boolean;// 是否提升层级
@@ -127,7 +129,7 @@ export const describeInput: IPropertyDefineData = {
 export interface IPropertyTextArea extends IPropertyInput {
     type: ECtrlType.TextArea,
     params?: IPropertyInput['params'] & {
-        resize?: TPropertyParam<'none' | 'auto' | 'vertical' | 'horizontal'>;
+        resize?: TPropertyParam<'none' | 'horizontal'>;
     }
 }
 
@@ -141,7 +143,7 @@ export const describeTextArea: IPropertyDefineData = {
             ...describeInput.fields.params,
             children: {
                 ...describeInput.fields.params.children,
-                resize: createDefineField('resize', 'String', '改变大小。none：不可改变大小；auto：自动；vertical：垂直方向可改变大小；horizontal：水平方向可改变大小。'),
+                resize: createDefineField('resize', 'String', '改变大小。none：不可改变大小；vertical：垂直方向可改变大小；'),
             }
         }
     }
@@ -190,9 +192,9 @@ export const describeInputNumber: IPropertyDefineData = {
 export interface IPropertyCheckbox extends IPropertyBase {
     type: ECtrlType.Checkbox;
     params?: {
-        default?: TPropertyParam<(string | number)[]>;
+        default?: TPropertyParam<any[]>;
         disabled?: TPropertyParam<boolean>;
-        options: TPropertyParam<{ label: string, value: string | number }>;
+        options: TPropertyParam<{ label: any, value: any }[]>;
         layout?: TPropertyParam<'vertical' | 'horizontal'>;
     };
 }
@@ -243,6 +245,7 @@ export const describeColorPicker: IPropertyDefineData = {
 export interface IPropertyDatePicker extends IPropertyBase {
     type: ECtrlType.DatePicker;
     params?: {
+        default?: TPropertyParam<string>;
         disabled?: TPropertyParam<boolean>;
         allowClear?: TPropertyParam<boolean>;
         mode?: TPropertyParam<'time' | 'date' | 'month' | 'year'>;
@@ -263,7 +266,7 @@ export const describeDatePicker: IPropertyDefineData = {
 export interface IPropertyTimePicker extends IPropertyBase {
     type: ECtrlType.TimePicker,
     params?: {
-
+        default: TPropertyParam<string>;
     }
 }
 export const describeTimePicker: IPropertyDefineData = {
@@ -368,13 +371,33 @@ export const describeSelect: IPropertyDefineData = {
 export interface IPropertyCollapse extends IPropertyBase {
     type: ECtrlType.Collapse,
     children: TPropertyDefine[],
-    params?: {
-        switch?: TPropertyParam<{ isShow: boolean, key: string, default: TPropertyParam<boolean> }>;// 是否展示控件开关
-    }
 }
 export const describeCollapse: IPropertyDefineData = {
     name: '折叠面板',
     type: ECtrlType.Collapse,
+    fields: {
+        ...describeBase.fields,
+        params: {
+            ...describeBase.fields.params,
+            children: {},
+        }
+    }
+}
+
+
+/**
+ * 折叠控件开关定义
+ */
+export interface IPropertyCollapseSwitch extends IPropertyBase {
+    type: ECtrlType.CollapseSwitch,
+    params?: {
+        default: TPropertyParam<boolean>;// 是否默认开启
+    }
+}
+export const describeCollapseSwitch: IPropertyDefineData = {
+    name: '折叠面板开关',
+    type: ECtrlType.CollapseSwitch,
+    description: "为折叠面板添加一个开关",
     fields: {
         ...describeBase.fields,
         params: {
@@ -485,7 +508,7 @@ export const arrayContainerCtrls: ECtrlType[] = [ECtrlType.List];
 /**
  * 输入控件定义
  */
-export type TPropertyDefine = IPropertyInput | IPropertyTextArea | IPropertyInputNumber | IPropertyColorPicker | IPropertyCheckbox | IPropertyDatePicker | IPropertyTimePicker | IPropertyRadio | IPropertySlider | IPropertySwitch | IPropertySelect | IPropertyCollapse | IPropertyDivider | IPropertyFlex | IPropertyGrid | IPropertyList;
+export type TPropertyDefine = IPropertyInput | IPropertyTextArea | IPropertyInputNumber | IPropertyColorPicker | IPropertyCheckbox | IPropertyDatePicker | IPropertyTimePicker | IPropertyRadio | IPropertySlider | IPropertySwitch | IPropertySelect | IPropertyCollapse | IPropertyCollapseSwitch | IPropertyDivider | IPropertyFlex | IPropertyGrid | IPropertyList;
 
 
 export interface IRenderPropertyDefine {

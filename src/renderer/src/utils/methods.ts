@@ -60,3 +60,33 @@ export const isNumber = (source: any) => {
     return !Number.isNaN(Number(source));
 }
 
+/**
+ * 拷贝
+ * @param source 
+ * @returns 
+ */
+export const copy = (source: any): any => {
+    if (typeof source === 'object' && source !== null) {
+        return JSON.parse(JSON.stringify(source));
+    }
+    return source;
+}
+
+/**
+ * 双向筛选
+ * @param list 
+ * @param filterHandler 
+ */
+export const bidirectionalFilter = <T>(list: T[], filterHandler: (e: T) => boolean) => {
+    const result: T[] = [];
+    const rest: T[] = [];
+    for (const item of list) {
+        if (filterHandler(item)) {
+            result.push(item)
+        } else {
+            rest.push(item)
+        }
+    }
+    return { result, rest }
+}
+
