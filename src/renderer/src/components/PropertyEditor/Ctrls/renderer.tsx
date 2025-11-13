@@ -1,12 +1,13 @@
 import Collapse from './Collapse/index';
 import Checkbox from './Checkbox/index';
 import Input from './Input/index';
+import Radio from './Radio/index';
 import InputNumber from './InputNumber/index';
 import TextArea from './TextArea/index';
 import List from './List/index';
 import Label from './Label/index';
 
-import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
+import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
 
 import { JSX } from 'react';
 import { getPropertyValue } from '../methods';
@@ -70,6 +71,22 @@ const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IP
     return (
         <InputNumber key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
         </InputNumber>
+    )
+};
+
+
+/**
+ * 渲染单选框
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderRadio = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyRadio, value: string | number, onChange: changeHandler) => {
+    return (
+        <Radio key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
+        </Radio>
     )
 };
 
@@ -152,6 +169,9 @@ export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<str
     }
     if (type === ECtrlType.TextArea) {
         return toRenderTextArea(renderDefine, ctrl as IPropertyTextArea, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.Radio) {
+        return toRenderRadio(renderDefine, ctrl, getPropertyValue(path, values), onChange);
     }
     if (type === ECtrlType.Collapse) {
         return toRenderCollapse(renderDefine, ctrl, values, onChange);

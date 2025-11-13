@@ -31,7 +31,7 @@ export const enum ECtrlType {
  */
 export interface IPropertyDefineField {
     name: string;
-    type: ECtrlType | 'String' | 'Number' | 'Boolean' | 'Object' | 'Array';
+    type: ECtrlType | 'String' | 'Number' | 'Boolean' | 'Object' | 'Array' | (ECtrlType | 'String' | 'Number' | 'Boolean' | 'Object' | 'Array')[];
     isRequire: boolean;
     description: string;
     children?: Record<string, IPropertyDefineField>;
@@ -287,7 +287,13 @@ export const describeTimePicker: IPropertyDefineData = {
 export interface IPropertyRadio extends IPropertyBase {
     type: ECtrlType.Radio,
     params?: {
+        default?: TPropertyParam<any>;
+        disabled?: TPropertyParam<boolean>;
+        options: TPropertyParam<{ label: any, value: any }[]>;
 
+        isBlock?: TPropertyParam<boolean>;
+        optionType?: TPropertyParam<'default' | 'button'>;
+        buttonStyle?: TPropertyParam<'outline' | 'solid'>;
     }
 }
 export const describeRadio: IPropertyDefineData = {
@@ -297,7 +303,14 @@ export const describeRadio: IPropertyDefineData = {
         ...describeBase.fields,
         params: {
             ...describeBase.fields.params,
-            children: {},
+            children: {
+                default: createDefineField('default', ['String', 'Number', 'Boolean'], desrcibeDefaultField),
+                disabled: createDefineField('disabled', 'Boolean', desrcibeDisabledField),
+                options: createDefineField('options', 'Array', '选项列表', true),
+                isBlock: createDefineField('isBlock', 'Boolean', '是否撑满宽度'),
+                optionType: createDefineField('optionType', 'String', '设置 options 类型，default：圆点；button：按钮'),
+                buttonStyle: createDefineField('buttonStyle', 'String', '设置按钮类型，outline：描边；solid：实色填充'),
+            },
         }
     }
 }
