@@ -1,45 +1,42 @@
-import { Input } from 'antd';
-import { IPropertyTextArea } from '../../declare';
-import Label from '../Label';
+import { Select } from 'antd';
 import style from './index.module.less'
+import Label from '../Label/index';
 import { useContext, useEffect, useState } from 'react'
+import { IPropertySelect } from '../../declare';
 import { PropertyGetterContext } from '../..';
 
 interface IProps {
-    define: IPropertyTextArea;
+    define: IPropertySelect;
     value: string | number;
-    onChange: (string) => void;
+    onChange: (e: string | number) => void;
 }
 
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
     const { define, value, onChange } = props;
-
     const propertyGetter = useContext(PropertyGetterContext);
 
     const [disabled, setDisabled] = useState<boolean>(false);
     const [placeholder, setPlaceholder] = useState<string>('');
-    const [maxlength, setMaxlength] = useState<number>();
-    const [resize, setResize] = useState<'none' | 'horizontal'>();
+    const [options, setOptions] = useState<{ label: string, value: string }[]>();
 
     useEffect(() => {
         setDisabled(propertyGetter(define.params?.disabled, define) ?? false);
         setPlaceholder(propertyGetter(define.params?.placeholder, define) ?? undefined);
-        setMaxlength(propertyGetter(define.params?.maxlength, define) ?? undefined);
-        setResize(propertyGetter(define.params?.resize, define) ?? undefined);
+        setOptions(propertyGetter(define.params?.options, define) || []);
     }, [propertyGetter, define]);
 
     return (
-        <div className={style.TextArea}>
+        <div className={style.Select}>
             {define?.label ? <Label label={define?.label}></Label> : null}
-            <Input.TextArea
+            <Select
+                value={value}
                 disabled={disabled}
                 placeholder={placeholder}
-                maxLength={maxlength}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                style={{ resize, width: 'var(--ctrl-width)' }}
+                options={options}
+                style={{ width: 'var(--ctrl-width)' }}
+                onChange={(e) => onChange(e)}
             >
-            </Input.TextArea>
+            </Select>
         </div>
     )
 }

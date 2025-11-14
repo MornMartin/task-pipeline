@@ -7,8 +7,9 @@ import TextArea from './TextArea/index';
 import List from './List/index';
 import Label from './Label/index';
 import ColorPicker from './ColorPicker/index';
+import Select from './Select/index';
 
-import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyColorPicker, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
+import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyColorPicker, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertySelect, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
 
 import { JSX } from 'react';
 import { getPropertyValue } from '../methods';
@@ -90,6 +91,21 @@ const toRenderColorPicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IP
     )
 };
 
+
+/**
+ * 渲染下拉选择
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderSelect = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySelect, value: string | number, onChange: changeHandler) => {
+    return (
+        <Select key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
+        </Select>
+    )
+};
 
 /**
  * 渲染单选框
@@ -191,6 +207,9 @@ export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<str
     }
     if (type === ECtrlType.ColorPicker) {
         return toRenderColorPicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.Select) {
+        return toRenderSelect(renderDefine, ctrl, getPropertyValue(path, values), onChange);
     }
     if (type === ECtrlType.Collapse) {
         return toRenderCollapse(renderDefine, ctrl, values, onChange);

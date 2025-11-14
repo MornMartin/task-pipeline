@@ -364,7 +364,10 @@ export const describeSwitch: IPropertyDefineData = {
 export interface IPropertySelect extends IPropertyBase {
     type: ECtrlType.Select,
     params?: {
-
+        default?: TPropertyParam<any>;
+        disabled?: TPropertyParam<boolean>;
+        placeholder?: TPropertyParam<string>;
+        options: TPropertyParam<{ label: any, value: any }[]>;
     }
 }
 export const describeSelect: IPropertyDefineData = {

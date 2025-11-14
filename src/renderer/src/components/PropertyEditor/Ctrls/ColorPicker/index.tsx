@@ -148,10 +148,10 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const [bindColor, setBindColor] = useState<TBindColor>(transColor2BindColor(transColorStr2Color(value)));
 
     useEffect(() => {
-        setDisabled(propertyGetter(define.params?.disabled, define) || false);
-        setAllowClear(propertyGetter(define.params?.allowClear, define) || undefined);
-        setFormat(propertyGetter(define.params?.format, define) || undefined);
-        setMode(propertyGetter(define.params?.mode, define) || undefined);
+        setDisabled(propertyGetter(define.params?.disabled, define) ?? false);
+        setAllowClear(propertyGetter(define.params?.allowClear, define) ?? undefined);
+        setFormat(propertyGetter(define.params?.format, define) ?? undefined);
+        setMode(propertyGetter(define.params?.mode, define) ?? undefined);
     }, [propertyGetter, define]);
 
     useEffect(() => {

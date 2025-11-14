@@ -23,8 +23,8 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const [controls, setControls] = useState<boolean>();
 
     useEffect(() => {
-        setDisabled(propertyGetter(define.params?.disabled, define) || false);
-        setPlaceholder(propertyGetter(define.params?.placeholder, define) || '');
+        setDisabled(propertyGetter(define.params?.disabled, define) ?? false);
+        setPlaceholder(propertyGetter(define.params?.placeholder, define) ?? undefined);
         setMin(propertyGetter(define.params?.min, define) ?? undefined);
         setMax(propertyGetter(define.params?.max, define) ?? undefined);
         setPrecision(propertyGetter(define.params?.precision, define) ?? undefined);

@@ -21,8 +21,8 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
 
     useEffect(() => {
         setOptions(propertyGetter(define.params?.options, define) || []);
-        setDisabled(propertyGetter(define.params?.disabled, define) || false);
-        setLayout(propertyGetter(define.params?.layout, define) || 'vertical');
+        setDisabled(propertyGetter(define.params?.disabled, define) ?? false);
+        setLayout(propertyGetter(define.params?.layout, define) ?? 'vertical');
     }, [propertyGetter, define]);
 
     return (

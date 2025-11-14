@@ -23,10 +23,10 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
 
     useEffect(() => {
         setOptions(propertyGetter(define.params?.options, define) || []);
-        setDisabled(propertyGetter(define.params?.disabled, define) || false);
-        setIsBlock(propertyGetter(define.params?.isBlock, define) || undefined);
-        setOptionType(propertyGetter(define.params?.optionType, define) || undefined);
-        setButtonStyle(propertyGetter(define.params?.buttonStyle, define) || undefined);
+        setDisabled(propertyGetter(define.params?.disabled, define) ?? false);
+        setIsBlock(propertyGetter(define.params?.isBlock, define) ?? undefined);
+        setOptionType(propertyGetter(define.params?.optionType, define) ?? undefined);
+        setButtonStyle(propertyGetter(define.params?.buttonStyle, define) ?? undefined);
     }, [propertyGetter, define]);
 
     return (

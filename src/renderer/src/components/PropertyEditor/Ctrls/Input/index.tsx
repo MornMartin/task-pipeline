@@ -20,8 +20,8 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const [maxlength, setMaxlength] = useState<number>();
 
     useEffect(() => {
-        setDisabled(propertyGetter(define.params?.disabled, define) || false);
-        setPlaceholder(propertyGetter(define.params?.placeholder, define) || '');
+        setDisabled(propertyGetter(define.params?.disabled, define) ?? false);
+        setPlaceholder(propertyGetter(define.params?.placeholder, define) ?? undefined);
         setMaxlength(propertyGetter(define.params?.maxlength, define) ?? undefined);
     }, [propertyGetter, define]);
 
