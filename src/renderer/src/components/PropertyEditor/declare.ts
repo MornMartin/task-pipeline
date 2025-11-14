@@ -224,6 +224,7 @@ export interface IPropertyColorPicker extends IPropertyBase {
         default?: TPropertyParam<string>;
         disabled?: TPropertyParam<boolean>;
         allowClear?: TPropertyParam<boolean>;
+        format?: TPropertyParam<'rgb' | 'hex' | 'hsb'>;
         mode?: TPropertyParam<'single' | 'gradient' | ('single' | 'gradient')[]>;
     }
 }

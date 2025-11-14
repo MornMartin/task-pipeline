@@ -17,6 +17,11 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const { children, define, switchDefine, switchValue, onChange } = props;
     const [activeKey, setActiveKey] = useState<number[]>([]);
 
+    const onActiveChange = (e) => {
+        if (!switchValue) return;
+        setActiveKey(e);
+    }
+
     const rendreTitle = () => {
         return (
             <div className={style.CollapseTitle}>
@@ -41,7 +46,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     }, [switchValue])
 
     return <>
-        <Collapse activeKey={activeKey} defaultActiveKey={defaultKey} className={style.Collapse} items={renderItems()}></Collapse>
+        <Collapse activeKey={activeKey} defaultActiveKey={defaultKey} className={style.Collapse} items={renderItems()} onChange={onActiveChange}></Collapse>
     </>
 }
 
