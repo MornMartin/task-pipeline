@@ -8,8 +8,10 @@ import List from './List/index';
 import Label from './Label/index';
 import ColorPicker from './ColorPicker/index';
 import Select from './Select/index';
+import Slider from './Slider/index';
+import Switch from './Switch/index';
 
-import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyColorPicker, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertySelect, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
+import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyColorPicker, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertySelect, IPropertySlider, IPropertySwitch, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
 
 import { JSX } from 'react';
 import { getPropertyValue } from '../methods';
@@ -40,8 +42,7 @@ const toRenderUndefined = (renderDefine: IRenderPropertyDefine, ctrlDefine: any)
  */
 const toRenderCheckbox = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCheckbox, value: (string | number)[], onChange: changeHandler) => {
     return (
-        <Checkbox key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
-        </Checkbox>
+        <Checkbox key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Checkbox>
     )
 };
 
@@ -55,8 +56,7 @@ const toRenderCheckbox = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProp
  */
 const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInput, value: string | number, onChange: changeHandler) => {
     return (
-        <Input key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
-        </Input>
+        <Input key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Input>
     )
 };
 
@@ -71,8 +71,21 @@ const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropert
  */
 const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInputNumber, value: number, onChange: changeHandler) => {
     return (
-        <InputNumber key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
-        </InputNumber>
+        <InputNumber key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></InputNumber>
+    )
+};
+
+/**
+ * 渲染滑动条
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderSlider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySlider, value: number, onChange: changeHandler) => {
+    return (
+        <Slider key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Slider>
     )
 };
 
@@ -86,11 +99,9 @@ const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IP
  */
 const toRenderColorPicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyColorPicker, value: string, onChange: changeHandler) => {
     return (
-        <ColorPicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
-        </ColorPicker>
+        <ColorPicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></ColorPicker>
     )
 };
-
 
 /**
  * 渲染下拉选择
@@ -102,8 +113,21 @@ const toRenderColorPicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IP
  */
 const toRenderSelect = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySelect, value: string | number, onChange: changeHandler) => {
     return (
-        <Select key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
-        </Select>
+        <Select key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Select>
+    )
+};
+
+/**
+ * 渲染开关
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderSwitch = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySwitch, value: boolean, onChange: changeHandler) => {
+    return (
+        <Switch key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Switch>
     )
 };
 
@@ -117,8 +141,7 @@ const toRenderSelect = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProper
  */
 const toRenderRadio = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyRadio, value: string | number, onChange: changeHandler) => {
     return (
-        <Radio key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}>
-        </Radio>
+        <Radio key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Radio>
     )
 };
 
@@ -198,6 +221,12 @@ export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<str
     }
     if (type === ECtrlType.InputNumber) {
         return toRenderInputNumber(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.Slider) {
+        return toRenderSlider(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.Switch) {
+        return toRenderSwitch(renderDefine, ctrl, getPropertyValue(path, values), onChange);
     }
     if (type === ECtrlType.TextArea) {
         return toRenderTextArea(renderDefine, ctrl as IPropertyTextArea, getPropertyValue(path, values), onChange);

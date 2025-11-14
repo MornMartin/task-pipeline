@@ -322,7 +322,11 @@ export const describeRadio: IPropertyDefineData = {
 export interface IPropertySlider extends IPropertyBase {
     type: ECtrlType.Slider,
     params?: {
-
+        default?: TPropertyParam<number>;
+        disabled?: TPropertyParam<boolean>;
+        min?: TPropertyParam<number>;
+        max?: TPropertyParam<number>;
+        step?: TPropertyParam<number>;
     }
 }
 export const describeSlider: IPropertyDefineData = {
@@ -332,7 +336,13 @@ export const describeSlider: IPropertyDefineData = {
         ...describeBase.fields,
         params: {
             ...describeBase.fields.params,
-            children: {},
+            children: {
+                default: createDefineField('default', 'Number', desrcibeDefaultField),
+                disabled: createDefineField('disabled', 'String', desrcibeDisabledField),
+                min: createDefineField('min', 'Number', '最小值'),
+                max: createDefineField('max', 'Number', '最大值'),
+                step: createDefineField('precision', 'Number', '步长'),
+            },
         }
     }
 }
@@ -343,7 +353,8 @@ export const describeSlider: IPropertyDefineData = {
 export interface IPropertySwitch extends IPropertyBase {
     type: ECtrlType.Switch,
     params?: {
-
+        default?: TPropertyParam<boolean>;
+        disabled?: TPropertyParam<boolean>;
     }
 }
 export const describeSwitch: IPropertyDefineData = {
@@ -353,7 +364,10 @@ export const describeSwitch: IPropertyDefineData = {
         ...describeBase.fields,
         params: {
             ...describeBase.fields.params,
-            children: {},
+            children: {
+                default: createDefineField('default', 'Number', desrcibeDefaultField),
+                disabled: createDefineField('disabled', 'String', desrcibeDisabledField),
+            },
         }
     }
 }
