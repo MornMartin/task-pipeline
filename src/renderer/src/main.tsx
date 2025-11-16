@@ -5,7 +5,11 @@ import { ConfigProvider } from 'antd'
 import App from './App'
 import { lowSaturationLight } from './theme'
 import '@ant-design/v5-patch-for-react-19'
-import locale from 'antd/locale/zh_CN'
+import locale from 'antd/locale/zh_CN';
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn';
+dayjs.locale('zh-cn');
+
 import { install } from '@renderer/utils/hotkeys';
 
 install();

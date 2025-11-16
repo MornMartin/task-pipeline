@@ -12,7 +12,7 @@ interface IProps {
 }
 
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
-    const { define, value, onChange } = props;
+    const { define, value = [], onChange } = props;
     const propertyGetter = useContext(PropertyGetterContext);
 
     const [options, setOptions] = useState<{ label: any, value: any }[]>([]);

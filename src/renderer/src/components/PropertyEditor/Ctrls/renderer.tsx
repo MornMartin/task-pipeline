@@ -10,8 +10,11 @@ import ColorPicker from './ColorPicker/index';
 import Select from './Select/index';
 import Slider from './Slider/index';
 import Switch from './Switch/index';
+import Divider from './Divider/index';
+import DatePicker from './DatePicker/index';
+import TimePicker from './TimePicker/index';
 
-import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyColorPicker, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertySelect, IPropertySlider, IPropertySwitch, IPropertyTextArea, IRenderPropertyDefine, TPropertyDefine } from '../declare';
+import { ECtrlType, IPropertyCheckbox, IPropertyCollapse, IPropertyCollapseSwitch, IPropertyColorPicker, IPropertyDatePicker, IPropertyDivider, IPropertyInput, IPropertyInputNumber, IPropertyList, IPropertyRadio, IPropertySelect, IPropertySlider, IPropertySwitch, IPropertyTextArea, IPropertyTimePicker, IRenderPropertyDefine, TPropertyDefine } from '../declare';
 
 import { JSX } from 'react';
 import { getPropertyValue } from '../methods';
@@ -60,6 +63,47 @@ const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropert
     )
 };
 
+/**
+ * 渲染分割线
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderDivider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyDivider) => {
+    return (
+        <Divider key={renderDefine.id} define={ctrlDefine}></Divider>
+    )
+};
+
+/**
+ * 渲染日期选择器
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderDatePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyDatePicker, value: string, onChange: changeHandler) => {
+    return (
+        <DatePicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></DatePicker>
+    )
+};
+
+/**
+ * 渲染时间选择器
+ * @param renderDefine 
+ * @param ctrlDefine 
+ * @param value 
+ * @param onChange 
+ * @returns 
+ */
+const toRenderTimePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyTimePicker, value: string, onChange: changeHandler) => {
+    return (
+        <TimePicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></TimePicker>
+    )
+};
 
 /**
  * 渲染数字框
@@ -233,6 +277,15 @@ export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<str
     }
     if (type === ECtrlType.Radio) {
         return toRenderRadio(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.Divider) {
+        return toRenderDivider(renderDefine, ctrl);
+    }
+    if (type === ECtrlType.DatePicker) {
+        return toRenderDatePicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+    }
+    if (type === ECtrlType.TimePicker) {
+        return toRenderTimePicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);
     }
     if (type === ECtrlType.ColorPicker) {
         return toRenderColorPicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);

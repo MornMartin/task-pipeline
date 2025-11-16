@@ -58,7 +58,7 @@ const desrcibePlaceholderField = '输入为空时显示文本';
 const desrcibeDisabledField = '是否禁用';
 const desrcibeMaxlengthField = '最大输入字符数';
 
-const createDefineField = (name: string, type: IPropertyDefineField['type'], description = '', isRequire = false, children?): IPropertyDefineField => {
+const createDefineField = (name: string, type: IPropertyDefineField['type'], description = '', isRequire = false, children?: Record<string, IPropertyDefineField>): IPropertyDefineField => {
     return { name, type, isRequire, description, children }
 }
 
@@ -248,9 +248,10 @@ export interface IPropertyDatePicker extends IPropertyBase {
     params?: {
         default?: TPropertyParam<string>;
         disabled?: TPropertyParam<boolean>;
-        allowClear?: TPropertyParam<boolean>;
-        mode?: TPropertyParam<'time' | 'date' | 'month' | 'year'>;
         placeholder?: TPropertyParam<string>;
+        allowClear?: TPropertyParam<boolean>;
+        mode?: TPropertyParam<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>;
+        format?: TPropertyParam<string>;
     }
 }
 export const describeDatePicker: IPropertyDefineData = {
@@ -258,6 +259,17 @@ export const describeDatePicker: IPropertyDefineData = {
     type: ECtrlType.DatePicker,
     fields: {
         ...describeBase.fields,
+        params: {
+            ...describeBase.fields.params,
+            children: {
+                default: createDefineField('default', 'String', desrcibeDefaultField),
+                disabled: createDefineField('disabled', 'Boolean', desrcibeDisabledField),
+                placeholder: createDefineField('placeholder', 'String', desrcibePlaceholderField),
+                allowClear: createDefineField('allowClear', 'Boolean', '是否允许清除选中值'),
+                mode: createDefineField('mode', 'String', '选择模式。time：精确到时间；date：精确到天；week：精确到周（开始时间）；quarter：精确到季度（开始时间）；year：精确到年'),
+                format: createDefineField('format', 'String', '格式。YYYY-MM-DD HH:mm:ss Y：年，M：月，D：天，H：小时（24时制），h：小时(12时制)，m：分，s：秒'),
+            },
+        }
     }
 }
 
@@ -267,7 +279,11 @@ export const describeDatePicker: IPropertyDefineData = {
 export interface IPropertyTimePicker extends IPropertyBase {
     type: ECtrlType.TimePicker,
     params?: {
-        default: TPropertyParam<string>;
+        default?: TPropertyParam<string>;
+        disabled?: TPropertyParam<boolean>;
+        placeholder?: TPropertyParam<string>;
+        allowClear?: TPropertyParam<boolean>;
+        format?: TPropertyParam<string>;
     }
 }
 export const describeTimePicker: IPropertyDefineData = {
@@ -277,7 +293,13 @@ export const describeTimePicker: IPropertyDefineData = {
         ...describeBase.fields,
         params: {
             ...describeBase.fields.params,
-            children: {},
+            children: {
+                default: createDefineField('default', 'String', desrcibeDefaultField),
+                disabled: createDefineField('disabled', 'Boolean', desrcibeDisabledField),
+                placeholder: createDefineField('placeholder', 'String', desrcibePlaceholderField),
+                allowClear: createDefineField('allowClear', 'Boolean', '是否允许清除选中值'),
+                format: createDefineField('format', 'String', '格式。HH:mm:ss H：小时（24时制），h：小时(12时制)，m：分，s：秒'),
+            },
         }
     }
 }
@@ -444,18 +466,16 @@ export const describeCollapseSwitch: IPropertyDefineData = {
 export interface IPropertyDivider extends IPropertyBase {
     type: ECtrlType.Divider,
     params?: {
-
+        lineColor?: TPropertyParam<string>,
+        labelColor?: TPropertyParam<string>,
+        type?: TPropertyParam<'horizontal' | 'vertical'>,
+        variant?: TPropertyParam<'dashed' | 'dotted' | 'solid'>,
     }
 }
 export const describeDivider: IPropertyDefineData = {
     name: '分割线',
     type: ECtrlType.Divider,
     fields: {
-        ...describeBase.fields,
-        params: {
-            ...describeBase.fields.params,
-            children: {},
-        }
     }
 }
 

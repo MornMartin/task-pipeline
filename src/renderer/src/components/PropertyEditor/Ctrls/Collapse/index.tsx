@@ -18,7 +18,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
     const [activeKey, setActiveKey] = useState<number[]>([]);
 
     const onActiveChange = (e) => {
-        if (!switchValue) return;
+        if (switchDefine && !switchValue) return;
         setActiveKey(e);
     }
 
