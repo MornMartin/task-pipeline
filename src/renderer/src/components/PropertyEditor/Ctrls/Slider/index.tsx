@@ -4,15 +4,12 @@ import Label from '../Label/index';
 import { useContext, useEffect, useState } from 'react'
 import { IPropertySlider } from '../../declare';
 import { PropertyGetterContext } from '../..';
-import { debounce } from '@renderer/utils/methods';
 
 interface IProps {
     define: IPropertySlider;
     value: number;
     onChange: (e: number) => void;
 }
-
-const changeDebounce = debounce(50);
 
 const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Element => {
     const { define, value, onChange } = props;
@@ -36,11 +33,6 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
         setLocalValue(value);
     }, [value]);
 
-    useEffect(() => {
-        if (localValue === value) return;
-        changeDebounce(() => onChange(localValue));
-    }, [localValue])
-
     return (
         <div className={style.Slider}>
             {define?.label ? <Label label={define?.label}></Label> : null}
@@ -52,6 +44,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 step={step}
                 style={{ width: 'var(--ctrl-width)' }}
                 onChange={setLocalValue}
+                onChangeComplete={() => onChange(localValue)}
             >
             </Slider>
         </div>
