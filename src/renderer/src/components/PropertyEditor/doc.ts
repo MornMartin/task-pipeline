@@ -14,6 +14,10 @@ export interface IRow {
 
 export type TRowExtra = (IRow & { indent: number })
 
+export interface IDescribes {
+    [key: string]: string | IDescribes;
+}
+
 const createTable = (datas: IRow[], columns: IColumn[]): string => {
     return `
 <table style="width:100%;">
@@ -48,7 +52,7 @@ const getDescribeByPath = (describes: Record<string, any>, paths: string[]): str
     return typeof temp === 'object' ? '' : temp;
 }
 
-const createRowExtraFromStruct = (obj: Record<string, any>, describes: Record<string, any>, indent = 0, paths: string[] = []): TRowExtra[] => {
+const createRowExtraFromStruct = (obj: Record<string, any>, describes: IDescribes, indent = 0, paths: string[] = []): TRowExtra[] => {
     if (typeof obj !== 'object') return [];
     if (Array.isArray(obj)) {
         const [defaultChild] = obj;
@@ -96,7 +100,7 @@ const transRowExtra2Row = (datas: TRowExtra[]): { maxCol: number, rows: IRow[] }
     }
 
     const getRowspan = (rowIndex: number, colIndex: number, target: number) => {
-        const siblings: number[] = [];
+        const siblings: (number[])[] = [];
         /**
          * 1
          * 1 2
@@ -139,12 +143,25 @@ const transRowExtra2Row = (datas: TRowExtra[]): { maxCol: number, rows: IRow[] }
     return { maxCol, rows }
 }
 
-export const createPropertyTable = (obj: Record<string, any>, describes: Record<string, string>): string => {
+/**
+ * 创建属性列表
+ * @param obj 
+ * @param describes 
+ * @returns 
+ */
+export const createPropertyTable = (obj: Record<string, any>, describes: IDescribes): string => {
     const datas = createRowExtraFromStruct(obj, describes)
     const { maxCol, rows } = transRowExtra2Row(datas)
     return createTable(rows, createCommonColums(maxCol));
 }
 
+/**
+ * 创建段落
+ * @param title 
+ * @param content 
+ * @param level 
+ * @returns 
+ */
 export const createSection = (title: string, content: string, level = 1) => {
     return `${'#'.repeat(level)} ${title}\n${content}\n`
 }

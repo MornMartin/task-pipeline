@@ -139,7 +139,7 @@ export const encodePropertyDefineJson = (ctrls: TPropertyDefine[]): string => {
                 const param = item.params?.[key];
                 params[key] = typeof param === 'function' ? param.toString() : param;
             }
-            return { ...item, params: item.params ? params : undefined, children: toDropFunc(item['children']) }
+            return { ...item, params: item.params ? params : undefined, children: toDropFunc(item['children']), template: toDropFunc(item['template']) }
         })
     }
     return JSON.stringify(toDropFunc(ctrls), null, 4);
@@ -161,7 +161,7 @@ export const decodePropertyDefineJson = (defines: string): TPropertyDefine[] => 
                     const param = item.params?.[key];
                     params[key] = tryDecodeFuncStr(param);
                 }
-                return { ...item, params: item.params ? params : undefined, children: toRestoreFunc(item['children']) }
+                return { ...item, params: item.params ? params : undefined, children: toRestoreFunc(item['children']), template: toRestoreFunc(item['template']) }
             })
         }
         return toRestoreFunc(ctrls);
@@ -194,155 +194,21 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                     }
                 },
                 {
-                    key: 'obj.checkbox',
-                    label: 'obj.checkbox',
-                    type: ECtrlType.Checkbox,
+                    key: 'obj.list',
+                    label: 'obj.list',
+                    type: ECtrlType.List,
                     params: {
-                        default: () => [],
-                        options: (propertyDefine, propertyValues, injects) => {
-                            return [
-                                { label: 1, value: 1 },
-                                { label: 2, value: 2 },
-                                { label: 3, value: 3 },
-                            ]
+                        default: ['1', '2', '3']
+                    },
+                    template: [
+                        {
+                            key: 'hello',
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'List Object Property'
+                            }
                         },
-                        disabled: (propertyDefine, propertyValues, injects) => {
-                            return !!propertyValues?.obj?.['obj.checkbox']?.length;
-                        }
-                    }
-                },
-                {
-                    key: 'obj.input2',
-                    label: 'obj.input2',
-                    type: ECtrlType.Input,
-                    params: {
-                        default: () => 'List Object Property'
-                    }
-                },
-                {
-                    key: 'obj.input3',
-                    label: 'obj.input3',
-                    type: ECtrlType.InputNumber,
-                    params: {
-                        default: () => 12,
-                        min: 0,
-                        max: 99,
-                    }
-                },
-                {
-                    key: 'obj.input4',
-                    label: 'obj.input4',
-                    type: ECtrlType.TextArea,
-                    params: {
-                        default: () => 12,
-                        maxlength: 24
-                    }
-                },
-                {
-                    key: 'obj.input5',
-                    label: 'obj.input5',
-                    type: ECtrlType.Radio,
-                    params: {
-                        default: () => 1,
-                        options: (propertyDefine, propertyValues, injects) => {
-                            return [
-                                { label: 1, value: 1 },
-                                { label: 2, value: 2 },
-                                { label: 3, value: 3 },
-                            ]
-                        },
-                        disabled: (propertyDefine, propertyValues, injects) => {
-                            return false;
-                        },
-                        isBlock: true,
-                        optionType: (propertyDefine, propertyValues, injects) => {
-                            return 'button'
-                        },
-                        buttonStyle(propertyDefine, propertyValues, injects) {
-                            return 'solid'
-                        },
-                    }
-                },
-                {
-                    key: 'obj.color',
-                    label: 'obj.color',
-                    type: ECtrlType.ColorPicker,
-                    params: {
-                        default: () => '#66ccff',
-                        mode(propertyDefine, propertyValues, injects) {
-                            return ['single', 'gradient']
-                        },
-                    }
-                },
-                {
-                    key: 'obj.select',
-                    label: 'obj.select',
-                    type: ECtrlType.Select,
-                    params: {
-                        placeholder: 'fdsfds',
-                        options: (propertyDefine, propertyValues, injects) => {
-                            return [
-                                { label: 1, value: 1 },
-                                { label: 2, value: 2 },
-                                { label: 3, value: 3 },
-                            ]
-                        },
-                        disabled: (propertyDefine, propertyValues, injects) => {
-                            return false;
-                        },
-                    }
-                },
-                {
-                    key: 'obj.input3',
-                    label: 'obj.input3',
-                    type: ECtrlType.Slider,
-                    params: {
-                        default: () => 12,
-                        min: 0,
-                        max: 99,
-                    }
-                },
-                {
-                    key: 'obj.switch',
-                    label: 'obj.switch',
-                    type: ECtrlType.Switch,
-                    params: {
-                        default: () => true,
-                        disabled(propertyDefine, propertyValues, injects) {
-                            return !!propertyValues['obj']?.['obj.switch']
-                        },
-                    }
-                },
-                {
-                    label: 'obj.divider',
-                    type: ECtrlType.Divider,
-                    key: '',
-                    params: {
-                        lineColor: "#ee0000",
-                        labelColor: "#66ccff",
-                        variant() {
-                            return 'solid'
-                        }
-                    }
-                },
-                {
-                    key: 'obj.DatePicker',
-                    label: 'obj.DatePicker',
-                    type: ECtrlType.DatePicker,
-                    params: {
-                        default: () => '2023-01-12',
-                        format: 'YYYY-MM-DD',
-                        mode: 'date',
-                    }
-                },
-                {
-                    key: 'obj.TimePicker',
-                    label: 'obj.TimePicker',
-                    type: ECtrlType.TimePicker,
-                    params: {
-                        default: () => '23:00',
-                        format: 'HH:mm:ss',
-                    }
+                    ]
                 },
                 // {
                 //     key: 'obj.input2',
@@ -360,30 +226,30 @@ export const createMockPropertyDefine = (): TPropertyDefine[] => {
                 //         default: () => 'List Object Property'
                 //     }
                 // },
-                // {
-                //     key: 'obj.obj',
-                //     label: 'obj.obj',
-                //     type: ECtrlType.Collapse,
-                //     children: [
-                //         {
-                //             key: 'obj.obj.input',
-                //             label: 'obj.obj.input',
-                //             type: ECtrlType.Input,
-                //             params: {
-                //                 default: () => 'List Object Property'
-                //             }
-                //         },
-                //         {
-                //             key: 'input3',
-                //             label: 'input3',
-                //             isElevated: true,
-                //             type: ECtrlType.Input,
-                //             params: {
-                //                 default: () => 'List Object Property'
-                //             }
-                //         },
-                //     ]
-                // },
+                {
+                    key: 'obj.obj',
+                    label: 'obj.obj',
+                    type: ECtrlType.Collapse,
+                    children: [
+                        {
+                            key: 'obj.obj.input',
+                            label: 'obj.obj.input',
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'List Object Property'
+                            }
+                        },
+                        {
+                            key: 'input3',
+                            label: 'input3',
+                            isElevated: true,
+                            type: ECtrlType.Input,
+                            params: {
+                                default: () => 'List Object Property'
+                            }
+                        },
+                    ]
+                },
             ]
         },
     ]

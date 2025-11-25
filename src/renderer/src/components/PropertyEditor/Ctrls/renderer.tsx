@@ -28,10 +28,10 @@ type changeHandler = (v: any, path: TPropertyDefine[]) => void;
  * @param ctrlDefine 
  * @returns 
  */
-const toRenderUndefined = (renderDefine: IRenderPropertyDefine, ctrlDefine: any) => {
-    return <div key={renderDefine.id} style={{ display: 'flex', marginBottom: '8px' }}>
+const toRenderUndefined = (renderDefine: IRenderPropertyDefine, ctrlDefine: any, isKeyDisabled = false) => {
+    return <div key={isKeyDisabled ? undefined : renderDefine.id} style={{ display: 'flex', marginBottom: '8px' }}>
         <Label>{ctrlDefine.label}</Label>
-        <div style={{ width: 'var(--ctrl-width)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Undefined {ctrlDefine?.type}</div>
+        <div style={{ width: ctrlDefine?.label ? 'var(--ctrl-width)' : '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Undefined {ctrlDefine?.type}</div>
     </div>
 };
 
@@ -43,9 +43,9 @@ const toRenderUndefined = (renderDefine: IRenderPropertyDefine, ctrlDefine: any)
  * @param onChange 
  * @returns 
  */
-const toRenderCheckbox = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCheckbox, value: (string | number)[], onChange: changeHandler) => {
+const toRenderCheckbox = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCheckbox, value: (string | number)[], onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <Checkbox key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Checkbox>
+        <Checkbox key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Checkbox>
     )
 };
 
@@ -57,9 +57,9 @@ const toRenderCheckbox = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProp
  * @param onChange 
  * @returns 
  */
-const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInput, value: string | number, onChange: changeHandler) => {
+const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInput, value: string | number, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <Input key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Input>
+        <Input key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Input>
     )
 };
 
@@ -71,9 +71,9 @@ const toRenderInput = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropert
  * @param onChange 
  * @returns 
  */
-const toRenderDivider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyDivider) => {
+const toRenderDivider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyDivider, isKeyDisabled = false) => {
     return (
-        <Divider key={renderDefine.id} define={ctrlDefine}></Divider>
+        <Divider key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine}></Divider>
     )
 };
 
@@ -85,9 +85,9 @@ const toRenderDivider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPrope
  * @param onChange 
  * @returns 
  */
-const toRenderDatePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyDatePicker, value: string, onChange: changeHandler) => {
+const toRenderDatePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyDatePicker, value: string, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <DatePicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></DatePicker>
+        <DatePicker key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></DatePicker>
     )
 };
 
@@ -99,9 +99,9 @@ const toRenderDatePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPr
  * @param onChange 
  * @returns 
  */
-const toRenderTimePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyTimePicker, value: string, onChange: changeHandler) => {
+const toRenderTimePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyTimePicker, value: string, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <TimePicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></TimePicker>
+        <TimePicker key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></TimePicker>
     )
 };
 
@@ -113,9 +113,9 @@ const toRenderTimePicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPr
  * @param onChange 
  * @returns 
  */
-const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInputNumber, value: number, onChange: changeHandler) => {
+const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyInputNumber, value: number, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <InputNumber key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></InputNumber>
+        <InputNumber key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></InputNumber>
     )
 };
 
@@ -127,9 +127,9 @@ const toRenderInputNumber = (renderDefine: IRenderPropertyDefine, ctrlDefine: IP
  * @param onChange 
  * @returns 
  */
-const toRenderSlider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySlider, value: number, onChange: changeHandler) => {
+const toRenderSlider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySlider, value: number, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <Slider key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Slider>
+        <Slider key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Slider>
     )
 };
 
@@ -141,9 +141,9 @@ const toRenderSlider = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProper
  * @param onChange 
  * @returns 
  */
-const toRenderColorPicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyColorPicker, value: string, onChange: changeHandler) => {
+const toRenderColorPicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyColorPicker, value: string, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <ColorPicker key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></ColorPicker>
+        <ColorPicker key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></ColorPicker>
     )
 };
 
@@ -155,9 +155,9 @@ const toRenderColorPicker = (renderDefine: IRenderPropertyDefine, ctrlDefine: IP
  * @param onChange 
  * @returns 
  */
-const toRenderSelect = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySelect, value: string | number, onChange: changeHandler) => {
+const toRenderSelect = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySelect, value: string | number, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <Select key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Select>
+        <Select key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Select>
     )
 };
 
@@ -169,9 +169,9 @@ const toRenderSelect = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProper
  * @param onChange 
  * @returns 
  */
-const toRenderSwitch = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySwitch, value: boolean, onChange: changeHandler) => {
+const toRenderSwitch = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertySwitch, value: boolean, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <Switch key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Switch>
+        <Switch key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Switch>
     )
 };
 
@@ -183,9 +183,9 @@ const toRenderSwitch = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProper
  * @param onChange 
  * @returns 
  */
-const toRenderRadio = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyRadio, value: string | number, onChange: changeHandler) => {
+const toRenderRadio = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyRadio, value: string | number, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <Radio key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Radio>
+        <Radio key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></Radio>
     )
 };
 
@@ -197,7 +197,7 @@ const toRenderRadio = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropert
  * @param onChange 
  * @returns 
  */
-const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCollapse, values: Record<string, any>, onChange: changeHandler) => {
+const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyCollapse, values: Record<string, any>, onChange: changeHandler, isKeyDisabled = false) => {
     const { result: collapseSwitch, rest } = bidirectionalFilter<IRenderPropertyDefine>(renderDefine.children || [], e => e.ctrl.type === ECtrlType.CollapseSwitch);
     const switchRenderDefine = collapseSwitch.pop();
     const { ctrl, path } = switchRenderDefine || {};
@@ -208,13 +208,13 @@ const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProp
     }
     return (
         <Collapse
-            key={renderDefine.id}
+            key={isKeyDisabled ? undefined : renderDefine.id}
             define={ctrlDefine}
             switchDefine={ctrl as IPropertyCollapseSwitch}
             switchValue={switchValue}
             onChange={onSwitchChange}
         >
-            {rest.map(item => toRender(item, values, onChange))}
+            {rest.map(item => toRender(item, values, onChange, false))}
         </Collapse>
     )
 };
@@ -227,9 +227,9 @@ const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProp
  * @param onChange 
  * @returns 
  */
-const toRenderTextArea = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyTextArea, value: string | number, onChange: changeHandler) => {
+const toRenderTextArea = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyTextArea, value: string | number, onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <TextArea key={renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></TextArea>
+        <TextArea key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></TextArea>
     )
 };
 
@@ -241,9 +241,9 @@ const toRenderTextArea = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProp
  * @param onChange 
  * @returns 
  */
-const toRenderList = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyList, value: any[], onChange: changeHandler) => {
+const toRenderList = (renderDefine: IRenderPropertyDefine, ctrlDefine: IPropertyList, value: any[], onChange: changeHandler, isKeyDisabled = false) => {
     return (
-        <List key={renderDefine.id} define={ctrlDefine} value={value} onChange={onChange}></List>
+        <List key={isKeyDisabled ? undefined : renderDefine.id} define={ctrlDefine} value={value} onChange={(e) => onChange(e, renderDefine.path)}></List>
     )
 };
 
@@ -252,53 +252,53 @@ const toRenderList = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProperty
  * @param renderDefine 
  * @param values 
  * @param onChange 
+ * @param isKeyDisabled 是否为控件声明key；当被数组调用时，key应写在每一项外层，若控件再声明key会导致更新时重载
  * @returns 
  */
-export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<string, any>, onChange: changeHandler): JSX.Element => {
+export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<string, any>, onChange: changeHandler, isKeyDisabled = false): JSX.Element => {
     const { ctrl, path } = renderDefine;
     const { type } = ctrl;
     if (type === ECtrlType.Checkbox) {
-        return toRenderCheckbox(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderCheckbox(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Input) {
-        return toRenderInput(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderInput(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.InputNumber) {
-        return toRenderInputNumber(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderInputNumber(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Slider) {
-        return toRenderSlider(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderSlider(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Switch) {
-        return toRenderSwitch(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderSwitch(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.TextArea) {
-        return toRenderTextArea(renderDefine, ctrl as IPropertyTextArea, getPropertyValue(path, values), onChange);
+        return toRenderTextArea(renderDefine, ctrl as IPropertyTextArea, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Radio) {
-        return toRenderRadio(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderRadio(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Divider) {
-        return toRenderDivider(renderDefine, ctrl);
+        return toRenderDivider(renderDefine, ctrl, isKeyDisabled);
     }
     if (type === ECtrlType.DatePicker) {
-        return toRenderDatePicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderDatePicker(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.TimePicker) {
-        return toRenderTimePicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderTimePicker(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.ColorPicker) {
-        return toRenderColorPicker(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderColorPicker(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Select) {
-        return toRenderSelect(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderSelect(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
     if (type === ECtrlType.Collapse) {
-        return toRenderCollapse(renderDefine, ctrl, values, onChange);
+        return toRenderCollapse(renderDefine, ctrl, values, onChange, isKeyDisabled);
     }
     if (type === ECtrlType.List) {
-        return toRenderList(renderDefine, ctrl, getPropertyValue(path, values), onChange);
+        return toRenderList(renderDefine, ctrl, getPropertyValue(path, values), onChange, isKeyDisabled);
     }
-    return toRenderUndefined(renderDefine, ctrl);
+    return toRenderUndefined(renderDefine, ctrl, isKeyDisabled);
 }
-

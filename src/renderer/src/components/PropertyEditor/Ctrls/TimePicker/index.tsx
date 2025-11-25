@@ -50,7 +50,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 allowClear={allowClear}
                 placeholder={placeholder}
                 onChange={onChange}
-                style={{ width: 'var(--ctrl-width)' }}
+                style={{ width: define?.label ? 'var(--ctrl-width)' : '100%' }}
                 getPopupContainer={e => wrap.current as HTMLDivElement}
             >
             </TimePicker>

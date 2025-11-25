@@ -29,7 +29,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
 
     const onChange = (e: any, path: TPropertyDefine[]) => {
         const values = createWriteBackObjectValues(path, e, valuesTemp.current);
-        // console.log(e, JSON.stringify(values));
+        console.log(e, JSON.stringify(values));
         props.onChange(copy(values), { path, value: e, ctrl: path[path.length - 1] });
     }
 

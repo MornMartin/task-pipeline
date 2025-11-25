@@ -1,1 +1,44 @@
-.List {}
+@list-operation-bar-width: 32px;
+
+.List {
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.listLabel {
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-around;
+
+    >div {
+        width: unset;
+    }
+}
+
+.listItem {
+    display: flex;
+}
+
+.listOperations {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    padding-bottom: 8px;
+    width: @list-operation-bar-width;
+}
+
+.listCtrlWrap {
+    width: calc(100% - @list-operation-bar-width);
+}
+
+.listAdd {
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    text-align: center;
+    transition: border-color 0.3s ease-in-out;
+
+    &:hover {
+        border-color: #ddd;
+    }
+}

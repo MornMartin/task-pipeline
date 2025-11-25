@@ -172,7 +172,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 mode={mode}
                 onChange={(e, css) => changeDebounce(() => onChange(css))}
                 showText={true}
-                style={{ width: 'var(--ctrl-width)', justifyContent: 'start' }}
+                style={{ width: define?.label ? 'var(--ctrl-width)' : '100%', justifyContent: 'start' }}
                 getPopupContainer={e => wrap.current as HTMLElement}
             >
             </ColorPicker>

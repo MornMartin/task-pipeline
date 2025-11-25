@@ -42,7 +42,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 max={max}
                 precision={precision}
                 controls={controls}
-                style={{ width: 'var(--ctrl-width)' }}
+                style={{ width: define?.label ? 'var(--ctrl-width)' : '100%' }}
                 onChange={(e) => onChange(e as number)}
             >
             </InputNumber>

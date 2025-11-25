@@ -803,9 +803,9 @@ const propertyFlexGridDefineData: IPropertyDefineData = {
 /**
  * 列表容器定义
  */
-export interface IPropertyList extends IPropertyBase {
+export interface IPropertyList extends Omit<IPropertyBase, 'children'> {
     type: ECtrlType.List,
-    children: [TPropertyDefine],
+    template: [TPropertyDefine],
     params?: {
         default?: TPropertyParam<any[]>;
     }
@@ -820,17 +820,15 @@ const propertyListDescribe: IPropertyDefineData['ctrl'] = {
 const propertyListDefineExample: IPropertyDefineData['example'] = {
     ...propertyBaseDefineExample,
     type: ECtrlType.List,
-    children: [],
+    template: [],
     params: {
         default: [],
     }
 }
 
-console.log(propertyListDefineExample)
-
 const propertyListDefineDescribe: IPropertyDefineData['describe'] = {
     ...propertyBaseDefineDescribe,
-    children: '数组的子项，有且仅有一项。可以为对象或单值。',
+    template: '数组的子项，有且仅有一项。可以为对象或单值。',
     params: {
         default: desrcibeDefaultField,
     }

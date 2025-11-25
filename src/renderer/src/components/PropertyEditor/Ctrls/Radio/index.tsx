@@ -39,7 +39,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 block={isBlock}
                 optionType={optionType}
                 buttonStyle={buttonStyle}
-                style={{ width: 'var(--ctrl-width)' }}
+                style={{ width: define?.label ? 'var(--ctrl-width)' : '100%' }}
                 onChange={(e) => onChange(e.target.value)}
             >
             </Radio.Group>

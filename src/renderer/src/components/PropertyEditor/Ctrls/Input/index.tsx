@@ -33,7 +33,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 disabled={disabled}
                 placeholder={placeholder}
                 maxLength={maxlength}
-                style={{ width: 'var(--ctrl-width)' }}
+                style={{ width: define?.label ? 'var(--ctrl-width)' : '100%' }}
                 onChange={(e) => onChange(e.target.value)}
             >
             </Input>

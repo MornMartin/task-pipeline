@@ -37,7 +37,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 maxLength={maxlength}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                style={{ resize, width: 'var(--ctrl-width)' }}
+                style={{ resize, width: define?.label ? 'var(--ctrl-width)' : '100%' }}
             >
             </Input.TextArea>
         </div>
