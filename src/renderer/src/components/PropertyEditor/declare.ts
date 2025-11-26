@@ -808,6 +808,8 @@ export interface IPropertyList extends Omit<IPropertyBase, 'children'> {
     template: [TPropertyDefine],
     params?: {
         default?: TPropertyParam<any[]>;
+        disableAddItem?: TPropertyParam<boolean>;
+        disableDelItem?: TPropertyParam<boolean>;
     }
 }
 

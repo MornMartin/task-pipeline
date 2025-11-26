@@ -214,7 +214,7 @@ const toRenderCollapse = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProp
             switchValue={switchValue}
             onChange={onSwitchChange}
         >
-            {rest.map(item => toRender(item, values, onChange, false))}
+            {rest.map(item => toRender(item, values, onChange, isKeyDisabled))}
         </Collapse>
     )
 };
@@ -252,7 +252,7 @@ const toRenderList = (renderDefine: IRenderPropertyDefine, ctrlDefine: IProperty
  * @param renderDefine 
  * @param values 
  * @param onChange 
- * @param isKeyDisabled 是否为控件声明key；当被数组调用时，key应写在每一项外层，若控件再声明key会导致更新时重载
+ * @param isKeyDisabled 是否为控件声明key；当被数组控件调用时，key应写在每一项外层，若控件再声明key会导致更新时重载
  * @returns 
  */
 export const toRender = (renderDefine: IRenderPropertyDefine, values: Record<string, any>, onChange: changeHandler, isKeyDisabled = false): JSX.Element => {

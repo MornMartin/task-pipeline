@@ -1,5 +1,3 @@
-@list-operation-bar-width: 32px;
-
 .List {
     padding: 8px;
     background-color: rgba(0, 0, 0, 0.1);
@@ -17,6 +15,7 @@
 
 .listItem {
     display: flex;
+    margin-bottom: 8px;
 }
 
 .listOperations {
@@ -24,11 +23,11 @@
     align-items: center;
     justify-content: end;
     padding-bottom: 8px;
-    width: @list-operation-bar-width;
+    width: var(--listOperationBarWidth);
 }
 
 .listCtrlWrap {
-    width: calc(100% - @list-operation-bar-width);
+    width: calc(100% - var(--listOperationBarWidth));
 }
 
 .listAdd {
