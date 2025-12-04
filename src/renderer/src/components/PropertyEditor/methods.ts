@@ -179,6 +179,10 @@ export const createPropertyCtrlDoc = (defineDatas: IPropertyDefineData[]) => {
     return `# 属性控件\n${sections}\n`;
 }
 
+export const definePropertyCtrls = (properties: TPropertyDefine[]): TPropertyDefine[] => {
+    return properties;
+}
+
 export const createMockPropertyDefine = (): TPropertyDefine[] => {
     return [
         {

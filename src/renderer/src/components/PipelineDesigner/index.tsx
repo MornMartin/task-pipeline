@@ -4,13 +4,16 @@ import PipelineCanvas from '@renderer/components/PipelineCanvas';
 import PropertyEditor from '@renderer/components/PropertyEditor';
 import { addHotKeyListener, EHotKey, generateHotKey } from '@renderer/utils/hotkeys';
 import { useMessage } from '@renderer/utils/message';
-import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, IOutPin, traverseNodesEndpoints, getNodesDeleteInfos, getNodesCopyInfos, getNodesPasteInfos, ENodeConfigType, ELineStatus } from '@renderer/utils/pipelineDeclares';
+import { INodeConfig, INode, mockNodes, ILine, IEvent, IAction, IOutPin, traverseNodesEndpoints, getNodesDeleteInfos, getNodesCopyInfos, getNodesPasteInfos, ENodeConfigType, ELineStatus, createNodeByDefine } from '@renderer/components/NodeDefines/declare';
 import { useEffect, useMemo, useRef, useState, createContext } from 'react';
 import { useLoaderData, useNavigate } from 'react-router';
 import { analysePropertyDefine, encodePropertyDefineJson } from '../PropertyEditor/methods';
 import { updatePipelineCanvasInfo } from '@renderer/api';
 import { defaultCanvasInfos, ICanvasInfos } from '../PipelineCanvas/declare';
 import { IRenderPropertyDefine, TPropertyDefine } from '../PropertyEditor/declare';
+import systemNodeDefines from '../NodeDefines';
+
+console.log(systemNodeDefines.map(item => createNodeByDefine(item)))
 
 const mockNodeList = mockNodes(2);
 
@@ -58,15 +61,15 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
 
     }, [propertyPannelInfos]);
 
-    const paramPannelWidth = useMemo(() =>{
+    const paramPannelWidth = useMemo(() => {
         return propertyDefines ? 'var(--param-pannel-width)' : '0px'
     }, [propertyDefines]);
 
-    const nodeListWrapWidth = useMemo(() =>{
+    const nodeListWrapWidth = useMemo(() => {
         return isShowNodeList ? 'var(--node-list-width)' : '0px';
     }, [isShowNodeList])
 
-    const pipelineCanvasWrapWidth = useMemo(() =>{
+    const pipelineCanvasWrapWidth = useMemo(() => {
         return `calc(100% - ${paramPannelWidth} - ${nodeListWrapWidth})`
     }, [paramPannelWidth, nodeListWrapWidth])
 
@@ -236,7 +239,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     return <>
         <div className={style.PipelineDesigner}>
             {contextHolder}
-            <div className={style.nodeListWrap} style={{width: nodeListWrapWidth}}>
+            <div className={style.nodeListWrap} style={{ width: nodeListWrapWidth }}>
                 <div className={style.nodeList}>
                     Node List
                 </div>
@@ -246,7 +249,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                     }
                 </div>
             </div>
-            <div className={style.pipelineCanvasWrap} style={{ width:  pipelineCanvasWrapWidth}}>
+            <div className={style.pipelineCanvasWrap} style={{ width: pipelineCanvasWrapWidth }}>
                 <PipelineCanvas
                     nodes={nodes}
                     lines={lines}
@@ -260,7 +263,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                 >
                 </PipelineCanvas>
             </div>
-            <div className={style.paramPannel} style={{ width:  paramPannelWidth}}>
+            <div className={style.paramPannel} style={{ width: paramPannelWidth }}>
                 {
                     propertyDefines ? <PropertyEditor defines={propertyDefines} values={propertyValues} onChange={onPropertyChange}></PropertyEditor> : null
                 }

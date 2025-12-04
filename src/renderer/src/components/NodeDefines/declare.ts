@@ -1,6 +1,7 @@
 import { TPropertyDefine } from "@renderer/components/PropertyEditor/declare";
-import { createUUID } from "./methods";
+import { createUUID } from "@renderer/utils/methods";
 import { analysePropertyDefine, createMockPropertyDefine } from "@renderer/components/PropertyEditor/methods";
+import { ac } from "node_modules/react-router/dist/development/context-DSyS5mLj.mjs";
 
 /**
  * 端点ID分隔符
@@ -35,7 +36,7 @@ export interface IEventParamDefine {
  */
 interface IEndpoint {
     id: string;
-    name: string;
+    label: string;
     type: EEndpoint;
 }
 
@@ -70,6 +71,7 @@ export interface IOutPin extends IEndpoint {
  */
 export const enum ENodeType {
     test,
+    http,
 }
 
 /**
@@ -101,7 +103,7 @@ export const enum ELineStatus {
  */
 export interface INode {
     id: string;
-    name: string;
+    label: string;
     type: ENodeType;
     status: ENodeStatus;
     events: IEvent[];
@@ -109,6 +111,13 @@ export interface INode {
     params?: Record<string, any>;
     paramDefines?: TPropertyDefine[];
     styleInfo: { left: number, top: number };
+}
+
+/**
+ * 节点模板定义
+ */
+export interface INodeDefine {
+    name: string, type: ENodeType, Properties: TPropertyDefine[], Events: IEvent[], Actions: IAction[]
 }
 
 /**
@@ -190,6 +199,46 @@ export const createNodeId = () => {
     return createUUID();
 }
 
+export const defineNode = (node: INodeDefine): INodeDefine => {
+    return node;
+}
+
+export const defineEvent = (event: Omit<IEvent, 'type'>): IEvent => {
+    return { ...event, type: EEndpoint.event };
+}
+
+export const defineAction = (action: Omit<IAction, 'type'>, outPins?: Omit<IOutPin, 'type'>[]): IAction => {
+    return { ...action, type: EEndpoint.action, outPins: (outPins || []).map(item => defineOutPin(item)) };
+}
+
+export const defineOutPin = (outPin: Omit<IOutPin, 'type'>): IOutPin => {
+    return { ...outPin, type: EEndpoint.outPin };
+}
+
+export const createNodeByDefine = (nodeDefine: INodeDefine, position?: { left: number, top: number }): INode => {
+    const id = createNodeId();
+    return {
+        id,
+        type: nodeDefine.type,
+        label: nodeDefine.name,
+        status: ENodeStatus.normal,
+        paramDefines: nodeDefine.Properties,
+        params: analysePropertyDefine(nodeDefine.Properties).defaults,
+        styleInfo: { left: position?.left || 0, top: position?.top || 0 },
+        events: nodeDefine.Events.map(item => {
+            return { ...item, id: encodeEndpointId(id, item.id) }
+        }),
+        actions: nodeDefine.Actions.map(action => {
+            return {
+                ...action, id: encodeEndpointId(id, action.id), outPins: action.outPins?.map(outPin => {
+                    return { ...outPin, id: encodeEndpointId(id, action.id, outPin.id) }
+                })
+            }
+        })
+    }
+}
+
+
 export const mockNodes = (length: number = 10): Record<string, INode> => {
     const temp = {};
     for (let i = 0; i < length; i++) {
@@ -201,36 +250,36 @@ export const mockNodes = (length: number = 10): Record<string, INode> => {
     return temp;
 }
 
-export const createMockNode = (id: string, name = 'mock-node', position?: { left: number, top: number }): INode => {
+export const createMockNode = (id: string, label = 'mock-node', position?: { left: number, top: number }): INode => {
     return {
         id,
-        name,
+        label,
         type: ENodeType.test,
         status: ENodeStatus.normal,
         styleInfo: { left: position?.left || 0, top: position?.top || 0 },
         paramDefines: createMockPropertyDefine(),
         events: [
-            { id: encodeEndpointId(id, 'event'), type: EEndpoint.event, name: 'Event 1', paramDefines: [] },
-            { id: encodeEndpointId(id, 'event2'), type: EEndpoint.event, name: 'Event 2', paramDefines: [] },
+            { id: encodeEndpointId(id, 'event'), type: EEndpoint.event, label: 'Event 1', paramDefines: [] },
+            { id: encodeEndpointId(id, 'event2'), type: EEndpoint.event, label: 'Event 2', paramDefines: [] },
         ],
         actions: [
             {
                 id: encodeEndpointId(id, 'action'),
-                name: 'Action With Param',
+                label: 'Action With Param',
                 type: EEndpoint.action,
                 paramDefines: createMockPropertyDefine(),
                 outPins: [
-                    { id: encodeEndpointId(id, 'action', 'outPin1'), type: EEndpoint.outPin, name: 'OutPin1 1', paramDefines: [] },
-                    { id: encodeEndpointId(id, 'action', 'outPin2'), type: EEndpoint.outPin, name: 'OutPin2 1', paramDefines: [] }
+                    { id: encodeEndpointId(id, 'action', 'outPin1'), type: EEndpoint.outPin, label: 'OutPin1 1', paramDefines: [] },
+                    { id: encodeEndpointId(id, 'action', 'outPin2'), type: EEndpoint.outPin, label: 'OutPin2 1', paramDefines: [] }
                 ]
             },
             {
                 id: encodeEndpointId(id, 'action2'),
-                name: 'Action Without Param',
+                label: 'Action Without Param',
                 type: EEndpoint.action,
                 outPins: [
-                    { id: encodeEndpointId(id, 'action2', 'outPin1'), type: EEndpoint.outPin, name: 'OutPin1 1', paramDefines: [] },
-                    { id: encodeEndpointId(id, 'action2', 'outPin2'), type: EEndpoint.outPin, name: 'OutPin2 1', paramDefines: [] }
+                    { id: encodeEndpointId(id, 'action2', 'outPin1'), type: EEndpoint.outPin, label: 'OutPin1 1', paramDefines: [] },
+                    { id: encodeEndpointId(id, 'action2', 'outPin2'), type: EEndpoint.outPin, label: 'OutPin2 1', paramDefines: [] }
                 ]
             },
         ],

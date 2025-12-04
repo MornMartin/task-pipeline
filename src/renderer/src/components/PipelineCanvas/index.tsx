@@ -22,7 +22,7 @@ import {
     setConnectionStatus,
     ICanvasInfos,
 } from './declare';
-import { INode, INodeConfig, ILine, ENodeConfigType, encodeLineId, ELineStatus, ENodeStatus } from '@renderer/utils/pipelineDeclares';
+import { INode, INodeConfig, ILine, ENodeConfigType, encodeLineId, ELineStatus, ENodeStatus } from '@renderer/components/NodeDefines/declare';
 import Slider from '../SliderInput';
 import { CtrlKey } from '@renderer/utils/hotkeys';
 

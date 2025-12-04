@@ -1,7 +1,7 @@
 import { Tooltip } from 'antd'
 import { ReactElement } from 'react';
 import style from './index.module.less';
-import { EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, ENodeStatus, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/utils/pipelineDeclares"
+import { EEndpoint, ELineStatus, encodeLineId, ENodeConfigType, ENodeStatus, IAction, IEvent, ILine, INode, INodeConfig, IOutPin, traverseNodesEndpoints } from "@renderer/components/NodeDefines/declare"
 import { BezierConnector, BrowserJsPlumbDefaults, EndpointOptions, BrowserJsPlumbInstance, ConnectionTypeDescriptor, Connection } from '@jsplumb/browser-ui';
 
 /**
@@ -90,7 +90,7 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
     return (
         <div className={style.node} key={id} id={id} onClick={() => onActiveHandler(node)} style={{ left, top }}>
             <div className={style.nodeTitle}>
-                <Tooltip className={style.tooltipOverflowEllipsis} title={node.name} destroyOnHidden>{node.name}</Tooltip>
+                <Tooltip className={style.tooltipOverflowEllipsis} title={node.label} destroyOnHidden>{node.label}</Tooltip>
             </div>
             {
                 node.events?.length ?
@@ -102,7 +102,7 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
                                     return (
                                         <div className={style.nodeEventItem} key={event.id}>
                                             <div className={style.nodeEndPointName}>
-                                                <Tooltip className={style.tooltipOverflowEllipsis} title={event.name} destroyOnHidden>{event.name}</Tooltip>
+                                                <Tooltip className={style.tooltipOverflowEllipsis} title={event.label} destroyOnHidden>{event.label}</Tooltip>
                                             </div>
                                             <div className={style.nodeEndPoint} id={event.id}></div>
                                         </div>
@@ -125,7 +125,7 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
                                             <div className={style.nodeActionItem}>
                                                 <div className={style.nodeEndPoint} id={action.id}></div>
                                                 <div className={style.nodeEndPointName}>
-                                                    <Tooltip className={style.tooltipOverflowEllipsis} title={action.name} destroyOnHidden>{action.name}</Tooltip>
+                                                    <Tooltip className={style.tooltipOverflowEllipsis} title={action.label} destroyOnHidden>{action.label}</Tooltip>
                                                 </div>
                                             </div>
                                             <div className={style.nodeActionOutPinList}>
@@ -134,7 +134,7 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
                                                         return (
                                                             <div className={style.nodeOutPinItem} key={outPin.id}>
                                                                 <div className={style.nodeEndPointName}>
-                                                                    <Tooltip className={style.tooltipOverflowEllipsis} title={outPin.name} destroyOnHidden>{outPin.name}</Tooltip>
+                                                                    <Tooltip className={style.tooltipOverflowEllipsis} title={outPin.label} destroyOnHidden>{outPin.label}</Tooltip>
                                                                 </div>
                                                                 <div className={style.nodeEndPoint} id={outPin.id}></div>
                                                             </div>
