@@ -1,5 +1,5 @@
 import style from './index.module.less';
-import { PauseCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons';
+import { DoubleLeftOutlined, DoubleRightOutlined, PauseCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import PipelineCanvas from '@renderer/components/PipelineCanvas';
 import PropertyEditor from '@renderer/components/PropertyEditor';
 import { addHotKeyListener, EHotKey, generateHotKey } from '@renderer/utils/hotkeys';
@@ -22,6 +22,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     const [active, setActive] = useState<INodeConfig[]>([]);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isShowNodeList, setIsShowNodeList] = useState(true);
 
     const nodesRef = useRef<Record<string, INode>>(detail.nodes ? JSON.parse(detail.nodes) : mockNodeList);
     const [nodes, setNodes] = useState<Record<string, INode>>(nodesRef.current);
@@ -56,6 +57,18 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
         return encodePropertyDefineJson(paramDefines);
 
     }, [propertyPannelInfos]);
+
+    const paramPannelWidth = useMemo(() =>{
+        return propertyDefines ? 'var(--param-pannel-width)' : '0px'
+    }, [propertyDefines]);
+
+    const nodeListWrapWidth = useMemo(() =>{
+        return isShowNodeList ? 'var(--node-list-width)' : '0px';
+    }, [isShowNodeList])
+
+    const pipelineCanvasWrapWidth = useMemo(() =>{
+        return `calc(100% - ${paramPannelWidth} - ${nodeListWrapWidth})`
+    }, [paramPannelWidth, nodeListWrapWidth])
 
     /**
      * 运行流水线
@@ -223,7 +236,17 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
     return <>
         <div className={style.PipelineDesigner}>
             {contextHolder}
-            <div className={style.pipelineCanvasWrap} style={{ width: propertyDefines ? 'calc(100% - var(--param-pannel-width))' : '100%' }}>
+            <div className={style.nodeListWrap} style={{width: nodeListWrapWidth}}>
+                <div className={style.nodeList}>
+                    Node List
+                </div>
+                <div className={style.nodeListToggle} onClick={() => setIsShowNodeList(!isShowNodeList)}>
+                    {
+                        isShowNodeList ? <DoubleLeftOutlined /> : <DoubleRightOutlined />
+                    }
+                </div>
+            </div>
+            <div className={style.pipelineCanvasWrap} style={{ width:  pipelineCanvasWrapWidth}}>
                 <PipelineCanvas
                     nodes={nodes}
                     lines={lines}
@@ -237,7 +260,7 @@ const Component: React.FC<IProps & Record<string, any>> = (): React.JSX.Element 
                 >
                 </PipelineCanvas>
             </div>
-            <div className={style.paramPannel} style={{ width: propertyDefines ? 'var(--param-pannel-width)' : '0' }}>
+            <div className={style.paramPannel} style={{ width:  paramPannelWidth}}>
                 {
                     propertyDefines ? <PropertyEditor defines={propertyDefines} values={propertyValues} onChange={onPropertyChange}></PropertyEditor> : null
                 }
