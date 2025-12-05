@@ -88,7 +88,8 @@ export const createNodeUI = (node: INode, onActiveHandler = (e: INode) => { }): 
     const { id, styleInfo } = node;
     const { left, top } = styleInfo;
     return (
-        <div className={style.node} key={id} id={id} onClick={() => onActiveHandler(node)} style={{ left, top }}>
+        // 阻止节点上有可拖入样式
+        <div className={style.node} key={id} id={id} onClick={() => onActiveHandler(node)} style={{ left, top }} onDragOver={e => e.stopPropagation()}>
             <div className={style.nodeTitle}>
                 <Tooltip className={style.tooltipOverflowEllipsis} title={node.label} destroyOnHidden>{node.label}</Tooltip>
             </div>

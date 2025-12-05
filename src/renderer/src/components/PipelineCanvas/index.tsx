@@ -302,6 +302,7 @@ const Component: React.FC<IProps & Record<string, any>> = (props): React.JSX.Ele
                 <div
                     className={style.canvas}
                     ref={jsPlumbContainer}
+                    data-is-pipeline-canvas="true"
                     onMouseDown={onCanvasMouseDown}
                     onMouseMove={onCanvasMouseMove}
                     style={{

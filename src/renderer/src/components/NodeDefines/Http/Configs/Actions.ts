@@ -13,11 +13,11 @@ export default [
                     { key: 'params', type: ECtrlType.Input, label: '请求参数' },
                     {
                         key: 'headers',
+                        label: 'Header',
                         type: ECtrlType.List,
                         template: [{
                             type: ECtrlType.Collapse,
                             key: '',
-                            label: 'Header',
                             children: definePropertyCtrls([
                                 { type: ECtrlType.Input, key: 'key', label: '字段名称' },
                                 { type: ECtrlType.Input, key: 'value', label: '字段值' }

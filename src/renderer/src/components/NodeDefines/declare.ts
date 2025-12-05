@@ -1,6 +1,6 @@
 import { TPropertyDefine } from "@renderer/components/PropertyEditor/declare";
 import { createUUID } from "@renderer/utils/methods";
-import { analysePropertyDefine, createMockPropertyDefine } from "@renderer/components/PropertyEditor/methods";
+import { analysePropertyDefine, createMockPropertyDefine, decodePropertyDefineJson, encodePropertyDefineJson } from "@renderer/components/PropertyEditor/methods";
 import { ac } from "node_modules/react-router/dist/development/context-DSyS5mLj.mjs";
 
 /**
@@ -213,6 +213,29 @@ export const defineAction = (action: Omit<IAction, 'type'>, outPins?: Omit<IOutP
 
 export const defineOutPin = (outPin: Omit<IOutPin, 'type'>): IOutPin => {
     return { ...outPin, type: EEndpoint.outPin };
+}
+
+export const encodeNodeDefineJson = (node: INodeDefine): string => {
+    const { Properties, Actions } = node;
+    return JSON.stringify({
+        ...node, Properties: encodePropertyDefineJson(Properties), Actions: Actions.map(item => {
+            return { ...item, paramDefines: item.paramDefines ? encodePropertyDefineJson(item.paramDefines) : item.paramDefines }
+        })
+    })
+}
+
+export const decodeNodeDefineJson = (node: string): INodeDefine | null => {
+    try {
+        const nodeDefine = JSON.parse(node);
+        const { Properties, Actions } = nodeDefine;
+        return {
+            ...nodeDefine, Properties: decodePropertyDefineJson(Properties), Actions: Actions.map(item => {
+                return { ...item, paramDefines: item.paramDefines ? decodePropertyDefineJson(item.paramDefines) : item.paramDefines }
+            })
+        }
+    } catch (err) {
+        return null;
+    }
 }
 
 export const createNodeByDefine = (nodeDefine: INodeDefine, position?: { left: number, top: number }): INode => {

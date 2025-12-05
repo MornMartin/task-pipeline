@@ -1,12 +1,12 @@
 import Properties from './Configs/Properties';
 import Events from './Configs/Events';
 import Actions from './Configs/Actions';
-import { defineNode, ENodeType } from '../declare';
+import { defineNode, encodeNodeDefineJson, ENodeType } from '../declare';
 
-export default defineNode({
+export default encodeNodeDefineJson(defineNode({
     type: ENodeType.http,
-    name: 'Http',
+    name: 'HTTP',
     Properties,
     Events,
     Actions,
-})
+}))
